@@ -1,0 +1,411 @@
+{
+  "schema_version": "1.0.0",
+  "parameters_version": "1.1.0",
+  "title": "Parámetros de diseño del Decision Engine v1",
+  "basis": "heuristic",
+  "notes": [
+    "Nivel 2 de 3: parámetros del sistema. Iguales para todos los usuarios, pero algunos se adaptan a lo que cada usuario registra (p.ej. ventana de tendencia según frecuencia de pesaje).",
+    "Nivel 1 (datos y preferencias del usuario) está en knowledge/design/onboarding.json. Nivel 3 (evidencia, no ajustable) está en knowledge/*/rules.json.",
+    "Nada de este archivo es evidencia: son decisiones de diseño tomadas el 2026-09-14 para cubrir gaps que las fuentes no resuelven. Cambiarlas es legítimo; hacerlo sube parameters_version.",
+    "Las fórmulas externas (Mifflin-St Jeor, Navy, Epley, 7700 kcal/kg) están registradas en sources.json como method_reference sin verificar contra el paper original."
+  ],
+  "decisions": [
+    {
+      "id": "design.supported_goal",
+      "title": "Objetivo soportado en v1 y mapeo a adaptación y fase energética",
+      "resolves_gaps": [
+        "gap.goal_to_adaptation_mapping",
+        "gap.goal_to_energy_phase",
+        "gap.caloric_deficit_adjustment"
+      ],
+      "rationale": "La app responde '¿cómo pierdo grasa manteniendo o ganando músculo?'. Hipertrofia como adaptación principal porque es la que describe directamente conservar/ganar músculo; fuerza como secundaria porque sirve de indicador de progreso (1RM estimado) y el ACSM respalda ambas. El entrenamiento no se modifica por estar en déficit: el ACSM no trata el déficit, así que no hay base para ajustar.",
+      "params": {
+        "supported_goals": [
+          "recomposition"
+        ],
+        "unsupported_goals_note": "Ganar masa (superávit) y rendimiento quedan fuera de v1: el onboarding solo ofrece recomposición.",
+        "recomposition": {
+          "facts": {
+            "goal": "fat_loss",
+            "energy_phase": "deficit",
+            "does_resistance_training": true,
+            "activity_level": "active_or_athlete"
+          },
+          "target_adaptation": {
+            "primary": "hypertrophy",
+            "secondary": "strength"
+          },
+          "training_adjustment_in_deficit": "none"
+        }
+      }
+    },
+    {
+      "id": "design.body_composition",
+      "title": "Estimación de grasa corporal, masa libre de grasa y categorías",
+      "resolves_gaps": [
+        "gap.body_fat_classification",
+        "gap.ffm_estimation"
+      ],
+      "rationale": "El método Navy solo necesita cinta métrica y es repetible; su error (±3-4%) es aceptable para clasificar en 3 categorías y seguir tendencia, no para diagnosticar. Los cortes por sexo son convencionales en fitness, no provienen de ACSM ni ISSN.",
+      "params": {
+        "method": "navy",
+        "method_reference": "NAVY_BODY_FAT_METHOD",
+        "formula_cm": {
+          "male": "%GC = 495 / (1.0324 - 0.19077 * log10(cintura - cuello) + 0.15456 * log10(altura)) - 450",
+          "female": "%GC = 495 / (1.29579 - 0.35004 * log10(cintura + cadera - cuello) + 0.22100 * log10(altura)) - 450"
+        },
+        "measurement_protocol": {
+          "waist_male": "a la altura del ombligo, relajado, al final de una exhalación",
+          "waist_female": "en la parte más estrecha de la cintura",
+          "hip_female": "en la parte más ancha de los glúteos",
+          "neck": "justo debajo de la laringe, cinta levemente inclinada hacia adelante",
+          "conditions": "en ayunas, antes de entrenar, mismo día de la semana"
+        },
+        "remeasure_every_weeks": 4,
+        "body_fat_category_thresholds_pct": {
+          "male": {
+            "low_below": 15,
+            "high_above": 25
+          },
+          "female": {
+            "low_below": 23,
+            "high_above": 32
+          }
+        },
+        "derived_facts": {
+          "body_fat_category": "low si %GC < low_below; high_or_obese si %GC > high_above; moderate en otro caso",
+          "is_athlete_or_lean": "body_fat_category == low",
+          "fat_free_mass_kg": "peso_kg * (1 - %GC / 100)"
+        },
+        "user_override": "Si el usuario carga una medición mejor (DEXA, etc.), reemplaza a la estimación Navy desde esa fecha."
+      }
+    },
+    {
+      "id": "design.training_experience",
+      "title": "Nivel de entrenamiento a partir de la experiencia declarada",
+      "resolves_gaps": [
+        "gap.training_level_intermediate",
+        "gap.experience_stratification"
+      ],
+      "rationale": "El ACSM encontró impacto mínimo de la experiencia, así que el nivel no cambia la prescripción de entrenamiento; solo alimenta los facts de nutrición que lo piden.",
+      "params": {
+        "experience_options": {
+          "none": {
+            "resistance_trained": false,
+            "training_level": "beginner_untrained"
+          },
+          "under_1_year": {
+            "resistance_trained": false,
+            "training_level": "beginner_untrained"
+          },
+          "1_to_3_years": {
+            "resistance_trained": true,
+            "training_level": null
+          },
+          "over_3_years": {
+            "resistance_trained": true,
+            "training_level": "advanced_athlete"
+          }
+        },
+        "intermediate_note": "training_level null para 1-3 años: las reglas de superávit no aplican, y en v1 no hay superávit."
+      }
+    },
+    {
+      "id": "design.pace_and_deficit",
+      "title": "Ritmo de pérdida y tamaño del déficit",
+      "resolves_gaps": [
+        "gap.deficit_magnitude",
+        "gap.loss_rate_non_lean",
+        "gap.surplus_magnitude"
+      ],
+      "rationale": "El usuario elige el ritmo; el motor lo acota. 0,5-1,0%/semana para magros viene del ISSN (Helms et al.). Para grasa moderada se usa el mismo techo; para grasa alta se permite hasta 1,25% porque el ISSN dice que el déficit puede ser más agresivo cuanto mayor la grasa inicial, sin dar número. El déficit se deriva del ritmo, en vez de fijar kcal arbitrarias.",
+      "params": {
+        "pace_options_pct_bodyweight_per_week": {
+          "conservative": 0.5,
+          "moderate": 0.75,
+          "fast": 1
+        },
+        "fast_when_high_body_fat_pct": 1.25,
+        "max_pct_by_body_fat_category": {
+          "low": 1,
+          "moderate": 1,
+          "high_or_obese": 1.25
+        },
+        "clamp": "ritmo_efectivo = min(ritmo_elegido, max_pct_by_body_fat_category[categoria])",
+        "energy_per_kg_bodyweight_kcal": 7700,
+        "energy_per_kg_reference": "ENERGY_DENSITY_7700_APPROXIMATION",
+        "daily_deficit_kcal": "ritmo_efectivo / 100 * peso_kg * 7700 / 7",
+        "intake_floor": "calorias_objetivo >= BMR estimado (Mifflin-St Jeor sin factor de actividad)",
+        "intake_floor_note": "Piso de seguridad de diseño para una app sin supervisión profesional. Si el déficit lo rompe, se usa el piso y se informa que el ritmo real será menor.",
+        "surplus": "No aplica en v1 (solo recomposición)."
+      }
+    },
+    {
+      "id": "design.energy_expenditure",
+      "title": "Gasto energético: estimación inicial y recalibración con datos reales",
+      "resolves_gaps": [
+        "gap.adjustment_magnitude"
+      ],
+      "rationale": "Las fórmulas de gasto tienen error individual grande; por eso solo se usan para arrancar. Con 3 semanas de ingesta y peso reales, el gasto observado reemplaza a la fórmula. Tras un estancamiento auditado, el ajuste es recalibrar y reaplicar el ritmo, no recortar un número fijo.",
+      "params": {
+        "initial_tdee": {
+          "method_reference": "MIFFLIN_ST_JEOR",
+          "bmr_male": "10 * peso_kg + 6.25 * altura_cm - 5 * edad + 5",
+          "bmr_female": "10 * peso_kg + 6.25 * altura_cm - 5 * edad - 161",
+          "activity_factors": {
+            "sedentary": 1.2,
+            "lightly_active": 1.375,
+            "moderately_active": 1.55,
+            "very_active": 1.725
+          },
+          "tdee": "bmr * activity_factor"
+        },
+        "recalibration": {
+          "requires_food_logging": "calories_and_protein",
+          "window_weeks": 3,
+          "min_logged_days_per_week": 5,
+          "observed_tdee": "ingesta_promedio_kcal + (perdida_peso_kg_por_semana * 7700 / 7)",
+          "weight_change_source": "diferencia entre promedios semanales de peso (design.trends), no pesajes sueltos",
+          "apply": "Cada 3 semanas con datos suficientes: tdee = observed_tdee; calorias_objetivo = tdee - daily_deficit_kcal."
+        },
+        "without_food_logging": "Sin registro de calorías no hay recalibración: si hay estancamiento confirmado se reduce la meta en el equivalente a 0,25% del peso/semana (0,25/100 * peso_kg * 7700 / 7 kcal/día) y se vuelve a evaluar tras la ventana de tendencia.",
+        "after_confirmed_stall": "Con auditoría correcta (recomposition.decide.adjust_plan): recalibrar y reaplicar el ritmo. El usuario puede elegir aumentar actividad en vez de bajar calorías.",
+        "metabolic_adaptation": "nutrition.energy.adaptive_tdee_correction solo se aplica si no hay recalibración con datos (sin registro de comida)."
+      }
+    },
+    {
+      "id": "design.protein_target",
+      "title": "Meta diaria de proteína",
+      "resolves_gaps": [],
+      "rationale": "Elige un punto concreto dentro de los rangos verificados del ISSN. En déficit se usa el tope del rango general; para magros entrenados, el mínimo del rango por masa libre de grasa si es mayor.",
+      "params": {
+        "target_g_per_day": "max(2.0 * peso_kg, si is_athlete_or_lean y resistance_trained: 2.3 * fat_free_mass_kg)",
+        "meets_target_threshold": "promedio de 7 días >= 1.4 g/kg de peso corporal (piso del rango del ISSN)",
+        "derived_facts": {
+          "protein_g_per_kg": "promedio de 7 días de proteína registrada / peso_kg",
+          "protein_intake_meets_target": "protein_g_per_kg >= 1.4"
+        },
+        "open_note": "Con grasa corporal alta, 2,0 g/kg del peso total da cifras altas; las fuentes no indican usar peso objetivo o masa magra. Se deja así en v1."
+      }
+    },
+    {
+      "id": "design.trends",
+      "title": "Cálculo de tendencias de peso, cintura y fuerza",
+      "resolves_gaps": [
+        "gap.trend_definitions"
+      ],
+      "rationale": "El peso diario fluctúa por agua y sal, así que se usan promedios semanales. La ventana crece si el usuario se pesa menos. Los umbrales de 'estable' se eligieron por encima del ruido típico de medición.",
+      "params": {
+        "weight": {
+          "weekly_value": "promedio de los pesajes de la semana (lunes a domingo)",
+          "min_weigh_ins_per_week": {
+            "daily": 4,
+            "three_per_week": 2,
+            "weekly": 1
+          },
+          "window_weeks_by_frequency": {
+            "daily": 2,
+            "three_per_week": 3,
+            "weekly": 4
+          },
+          "rate": "cambio_pct_semanal = pendiente de los promedios semanales en la ventana / peso_promedio * 100",
+          "stable_if_abs_pct_per_week_below": 0.2,
+          "derived_facts": {
+            "weight_trend": "decreasing si cambio < -0.2; increasing si > 0.2; stable en otro caso",
+            "weekly_weight_loss_pct": "-cambio_pct_semanal"
+          }
+        },
+        "waist": {
+          "measure_every": "semanal, mismo protocolo que design.body_composition",
+          "compare": "promedio de las últimas 2 mediciones vs promedio de las 2 anteriores",
+          "min_measurements": 4,
+          "stable_if_abs_cm_below": 0.5,
+          "derived_facts": {
+            "waist_trend": "decreasing si diferencia < -0.5 cm; increasing si > 0.5 cm; stable en otro caso"
+          }
+        },
+        "strength": {
+          "per_exercise": "mejor 1RM estimado (design.one_rm_estimation) de los últimos 14 días vs los 14 días anteriores",
+          "eligible_exercises": "exercise_type == compound en la Exercise KB, entrenados en ambas ventanas",
+          "min_exercises": 2,
+          "aggregate": "mediana del cambio % entre ejercicios elegibles",
+          "stable_if_abs_pct_below": 2.5,
+          "derived_facts": {
+            "heavy_load_strength_trend": "decreasing si mediana < -2.5%; increasing si > 2.5%; stable en otro caso"
+          }
+        },
+        "stall": {
+          "derived_facts": {
+            "weeks_without_weight_change": "semanas consecutivas con weight_trend == stable",
+            "weeks_weight_and_waist_stalled": "semanas consecutivas con weight_trend == stable y waist_trend == stable",
+            "progress_status": "stalled si weeks_weight_and_waist_stalled >= 2; progressing en otro caso"
+          }
+        },
+        "insufficient_data": "Si no hay datos mínimos, el fact queda sin valor y las reglas que lo usan no se evalúan (la app muestra 'faltan datos', no una conclusión)."
+      }
+    },
+    {
+      "id": "design.one_rm_estimation",
+      "title": "1RM estimado a partir de las series registradas",
+      "resolves_gaps": [
+        "gap.one_rm_tracking"
+      ],
+      "rationale": "La app ya registra kg, reps y RIR. Sumar el RIR a las reps aproxima las repeticiones posibles hasta el fallo. Epley pierde precisión con muchas repeticiones, por eso se limita.",
+      "params": {
+        "method_reference": "EPLEY_1RM",
+        "formula": "e1RM = kg * (1 + (reps + RIR) / 30)",
+        "eligible_set": "status == completed, type != warmup, reps + RIR <= 12, RIR <= 4",
+        "rir_when_missing": "no se estima (la serie no cuenta)",
+        "derived_facts": {
+          "exercise.load_pct_1rm": "kg de la serie / mejor e1RM del ejercicio en los últimos 28 días * 100",
+          "strength_work_load_pct_1rm": "mediana de exercise.load_pct_1rm de las series de trabajo en ejercicios compuestos de la semana"
+        }
+      }
+    },
+    {
+      "id": "design.evaluation_matrix",
+      "title": "Matriz de evaluación del check-in semanal",
+      "resolves_gaps": [
+        "gap.weight_stable_waist_decreasing"
+      ],
+      "rationale": "Completa los casos que las reglas de monitoring de la investigación no cubrían, en especial el central de la app (peso estable + cintura bajando). Se implementa como reglas heurísticas en recomposition/rules.json.",
+      "params": {
+        "rules": [
+          "recomposition.assess.fat_loss",
+          "recomposition.assess.recomposition_likely",
+          "recomposition.assess.possible_muscle_loss",
+          "recomposition.assess.likely_fat_gain",
+          "recomposition.decide.maintain_plan",
+          "recomposition.decide.audit_before_adjusting",
+          "recomposition.decide.adjust_plan"
+        ]
+      }
+    },
+    {
+      "id": "design.ui_training_defaults",
+      "title": "Valores por defecto de la UI de entrenamiento",
+      "resolves_gaps": [],
+      "rationale": "La fuente no fija RIR ni descanso para hipertrofia. La UI necesita valores por defecto: se usan los ejemplos que sí menciona el ACSM (2-3 RIR) y el descanso actual, siempre editables.",
+      "params": {
+        "default_target_rir": {
+          "min": 2,
+          "max": 3
+        },
+        "rir_ui_label": "Esfuerzo alto: 2-3 repeticiones en reserva (ejemplo del ACSM, no un óptimo)",
+        "default_rest_seconds": 120,
+        "replaces": "'Óptimo: RIR 1-2' en LiveWorkoutView.tsx y mockOnboarding.ts (no respaldado)"
+      }
+    },
+    {
+      "id": "design.strength_index",
+      "title": "Índice de fuerza: % de cambio del e1RM en compuestos",
+      "resolves_gaps": [],
+      "rationale": "No hay evidencia ni decisión previa que defina un \"índice de fuerza\" único. Se define como el cambio porcentual del 1RM estimado (design.one_rm_estimation) en ejercicios compuestos, comparando los últimos 30 días contra los 30 anteriores. Es la misma idea que heavy_load_strength_trend (recomposition/rules.json) pero como número continuo en vez de categoría, para mostrar magnitud además de dirección.",
+      "params": {
+        "window_days": 30,
+        "eligible_exercises": "exercise_type == compound (Exercise KB) con al menos un e1RM elegible (design.one_rm_estimation) en cada ventana",
+        "min_exercises_required": 2,
+        "per_exercise_change_pct": "(mejor e1RM ventana actual - mejor e1RM ventana anterior) / mejor e1RM ventana anterior * 100",
+        "aggregate": "media de per_exercise_change_pct entre los ejercicios elegibles",
+        "insufficient_data": "si hay menos de min_exercises_required elegibles, el índice queda sin valor (\"faltan datos\"), no se muestra un 0 falso"
+      }
+    },
+    {
+      "id": "design.workout_split",
+      "title": "Reparto semanal (split) según días disponibles",
+      "resolves_gaps": [],
+      "rationale": "El ACSM no prefiere un split sobre otro (frecuencia con volumen igualado no afecta hipertrofia) y recomienda cubrir empuje/tracción y tren superior/inferior (training.selection.major_muscle_groups). No hay evidencia que decida la estructura exacta por días/semana: es una decisión de programación práctica, no clínica.",
+      "params": {
+        "splits_by_days_per_week": {
+          "2": "full_body_x2",
+          "3": "full_body_x3",
+          "4": "upper_lower_x2",
+          "5": "push_pull_legs_upper_lower",
+          "6": "push_pull_legs_x2"
+        },
+        "exercises_per_day": {
+          "min": 4,
+          "max": 7
+        },
+        "sets_per_compound_exercise": {
+          "min": 3,
+          "max": 4
+        },
+        "sets_per_isolation_exercise": {
+          "min": 2,
+          "max": 3
+        },
+        "rep_range_by_slot": {
+          "compound_strength": "5-8",
+          "compound_hypertrophy": "8-12",
+          "isolation": "10-15"
+        },
+        "implementation": "Tablas exactas de días/patrones en src/engine/splitTemplates.ts (referencian este id). Se mantienen en código, no en JSON, para no duplicar una estructura que el código ya valida en tiempo de compilación."
+      }
+    },
+    {
+      "id": "design.exercise_selection",
+      "title": "Selección determinista de ejercicios reales por patrón de movimiento",
+      "resolves_gaps": [],
+      "rationale": "El ACSM encontró que el tipo de equipamiento y la complejidad del ejercicio no alteran los resultados (training.selection.equipment_any, training.selection.complexity_any): filtrar por disponibilidad real del usuario es válido y no sacrifica evidencia. La selección es determinista (mismo perfil + mismo patrón → mismo ejercicio) para que la rutina sea reproducible y auditable, sin aleatoriedad ni preferencias ocultas.",
+      "params": {
+        "filter": "movement_pattern (Exercise KB) == patrón requerido por el slot del día, y equipment_access del ejercicio compatible con equipment_access del usuario",
+        "equipment_compatibility": {
+          "gym": [
+            "none",
+            "minimal",
+            "gym"
+          ],
+          "minimal": [
+            "none",
+            "minimal"
+          ],
+          "none": [
+            "none"
+          ]
+        },
+        "exclude_review_status": [
+          "needs_review",
+          "not_assessed"
+        ],
+        "exclude_note": "No se arman rutinas automáticas con ejercicios cuyo movement_pattern tiene baja confianza — evita prescribir por error un ejercicio mal clasificado.",
+        "tie_break": "primero mayor confidence de movement_pattern (high > medium), luego id numérico ascendente del dataset — estable y reproducible entre corridas",
+        "variety_across_sessions": "v1 no rota variantes entre semanas: el mismo perfil recibe el mismo ejercicio por slot hasta que cambien sus datos de onboarding. Rotación de variedad queda como mejora futura, no bloqueante."
+      }
+    },
+    {
+      "id": "design.progression",
+      "title": "Progresión de carga: doble progresión simple",
+      "resolves_gaps": [],
+      "rationale": "El ACSM exige sobrecarga progresiva (training.progression.progressive_overload) pero no especifica el algoritmo — es un vacío de diseño, no de evidencia. La doble progresión (subir peso solo al llegar al techo del rango de reps con el esfuerzo objetivo) es el método más usado en programación de fuerza por ser simple y sin ambigüedad para quien no tiene entrenador.",
+      "params": {
+        "rule": "Si en la sesión anterior TODAS las series de trabajo (no warmup) de ese ejercicio llegaron al techo del rango de reps objetivo con RIR <= objetivo, subir peso. Si no, repetir el mismo peso.",
+        "weight_increment_kg": {
+          "upper_body_pattern": 2.5,
+          "lower_body_pattern": 5
+        },
+        "upper_body_patterns": [
+          "horizontal_push",
+          "horizontal_pull",
+          "vertical_push",
+          "vertical_pull",
+          "shoulder_abduction",
+          "shoulder_flexion",
+          "elbow_flexion",
+          "elbow_extension",
+          "scapular_elevation",
+          "wrist"
+        ],
+        "lower_body_patterns": [
+          "knee_dominant",
+          "hip_dominant",
+          "knee_flexion",
+          "ankle_plantarflexion",
+          "hip_abduction",
+          "hip_adduction"
+        ],
+        "no_history_default": "Primera vez que se prescribe un ejercicio: no hay 1RM ni historial para calcular un peso. El motor no inventa un número — pide al usuario que empiece con una carga cómoda para llegar a 2-3 RIR, y usa lo que registre como línea base para la sesión siguiente."
+      }
+    }
+  ]
+}

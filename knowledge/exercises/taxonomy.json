@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.0.0",
+  "taxonomy_version": "1.0.0",
+  "status": "proposed",
+  "attributes": {
+    "movement_pattern": {
+      "values": [
+        "horizontal_push", "horizontal_pull", "vertical_push", "vertical_pull",
+        "knee_dominant", "knee_flexion", "hip_dominant",
+        "hip_abduction", "hip_adduction", "ankle_plantarflexion",
+        "elbow_flexion", "elbow_extension", "wrist",
+        "shoulder_abduction", "shoulder_flexion", "scapular_elevation",
+        "trunk_flexion", "trunk_extension", "trunk_rotation", "trunk_stabilization",
+        "carry", "locomotion", "other", "unknown"
+      ],
+      "inferred": true
+    },
+    "exercise_type": {
+      "values": ["compound", "isolation", "core", "conditioning", "mobility", "warmup", "other", "unknown"],
+      "inferred": true
+    },
+    "mechanical_role": {
+      "values": ["primary_compound", "secondary_compound", "accessory", "isolation", "core", "conditioning", "other", "unknown"],
+      "inferred": true
+    },
+    "equipment_access": {
+      "values": ["none", "minimal", "gym", "unknown"],
+      "inferred": true
+    },
+    "home_compatible": {
+      "values": [true, false, null],
+      "inferred": true
+    },
+    "difficulty": {
+      "values": ["beginner", "intermediate", "advanced", "unknown"],
+      "inferred": false
+    },
+    "technical_complexity": {
+      "values": ["low", "medium", "high", "unknown"],
+      "inferred": false
+    },
+    "stability_demand": {
+      "values": ["low", "medium", "high", "unknown"],
+      "inferred": false
+    },
+    "fatigue_cost": {
+      "values": ["low", "medium", "high", "unknown"],
+      "inferred": false
+    }
+  },
+  "confidence": ["high", "medium", "low", "none"],
+  "review_status": {
+    "inferred": "Deducido por reglas deterministas con confianza alta o media.",
+    "needs_review": "Deducido con confianza baja, por fallback o sin clasificar. Requiere revisión humana.",
+    "validated": "Revisado manualmente (knowledge/exercises/overrides.json). Tiene prioridad sobre lo inferido.",
+    "not_assessed": "No se intentó inferir: el dataset no contiene información suficiente sin inventar precisión."
+  },
+  "equipment": {
+    "body weight": { "id": "body_weight", "access": "none" },
+    "band": { "id": "band", "access": "minimal" },
+    "resistance band": { "id": "resistance_band", "access": "minimal" },
+    "dumbbell": { "id": "dumbbell", "access": "minimal" },
+    "kettlebell": { "id": "kettlebell", "access": "minimal" },
+    "medicine ball": { "id": "medicine_ball", "access": "minimal" },
+    "stability ball": { "id": "stability_ball", "access": "minimal" },
+    "bosu ball": { "id": "bosu_ball", "access": "minimal" },
+    "roller": { "id": "roller", "access": "minimal" },
+    "wheel roller": { "id": "wheel_roller", "access": "minimal" },
+    "rope": { "id": "rope", "access": "minimal" },
+    "barbell": { "id": "barbell", "access": "gym" },
+    "olympic barbell": { "id": "olympic_barbell", "access": "gym" },
+    "ez barbell": { "id": "ez_barbell", "access": "gym" },
+    "trap bar": { "id": "trap_bar", "access": "gym" },
+    "smith machine": { "id": "smith_machine", "access": "gym" },
+    "leverage machine": { "id": "leverage_machine", "access": "gym" },
+    "cable": { "id": "cable", "access": "gym" },
+    "sled machine": { "id": "sled_machine", "access": "gym" },
+    "skierg machine": { "id": "skierg_machine", "access": "gym" },
+    "stepmill machine": { "id": "stepmill_machine", "access": "gym" },
+    "elliptical machine": { "id": "elliptical_machine", "access": "gym" },
+    "stationary bike": { "id": "stationary_bike", "access": "gym" },
+    "upper body ergometer": { "id": "upper_body_ergometer", "access": "gym" },
+    "assisted": { "id": "assisted", "access": "unknown" },
+    "weighted": { "id": "weighted", "access": "unknown" },
+    "hammer": { "id": "hammer", "access": "unknown" },
+    "tire": { "id": "tire", "access": "unknown" }
+  },
+  "muscles": {
+    "abs": { "id": "abdominals", "granularity": "muscle" },
+    "abdominals": { "id": "abdominals", "granularity": "muscle" },
+    "lower abs": { "id": "lower_abdominals", "granularity": "muscle" },
+    "obliques": { "id": "obliques", "granularity": "muscle" },
+    "delts": { "id": "deltoids", "granularity": "muscle" },
+    "deltoids": { "id": "deltoids", "granularity": "muscle" },
+    "rear deltoids": { "id": "rear_deltoids", "granularity": "muscle" },
+    "lats": { "id": "latissimus_dorsi", "granularity": "muscle" },
+    "latissimus dorsi": { "id": "latissimus_dorsi", "granularity": "muscle" },
+    "quads": { "id": "quadriceps", "granularity": "muscle" },
+    "quadriceps": { "id": "quadriceps", "granularity": "muscle" },
+    "traps": { "id": "trapezius", "granularity": "muscle" },
+    "trapezius": { "id": "trapezius", "granularity": "muscle" },
+    "pectorals": { "id": "pectorals", "granularity": "muscle" },
+    "upper chest": { "id": "upper_chest", "granularity": "muscle" },
+    "biceps": { "id": "biceps", "granularity": "muscle" },
+    "brachialis": { "id": "brachialis", "granularity": "muscle" },
+    "triceps": { "id": "triceps", "granularity": "muscle" },
+    "forearms": { "id": "forearms", "granularity": "muscle" },
+    "wrist flexors": { "id": "wrist_flexors", "granularity": "muscle" },
+    "wrist extensors": { "id": "wrist_extensors", "granularity": "muscle" },
+    "glutes": { "id": "glutes", "granularity": "muscle" },
+    "hamstrings": { "id": "hamstrings", "granularity": "muscle" },
+    "adductors": { "id": "adductors", "granularity": "muscle" },
+    "abductors": { "id": "abductors", "granularity": "muscle" },
+    "inner thighs": { "id": "inner_thighs", "granularity": "region" },
+    "hip flexors": { "id": "hip_flexors", "granularity": "muscle" },
+    "calves": { "id": "calves", "granularity": "muscle" },
+    "soleus": { "id": "soleus", "granularity": "muscle" },
+    "rhomboids": { "id": "rhomboids", "granularity": "muscle" },
+    "rotator cuff": { "id": "rotator_cuff", "granularity": "muscle" },
+    "serratus anterior": { "id": "serratus_anterior", "granularity": "muscle" },
+    "levator scapulae": { "id": "levator_scapulae", "granularity": "muscle" },
+    "sternocleidomastoid": { "id": "sternocleidomastoid", "granularity": "muscle" },
+    "upper back": { "id": "upper_back", "granularity": "region" },
+    "lower back": { "id": "lower_back", "granularity": "region" },
+    "back": { "id": "back", "granularity": "region" },
+    "chest": { "id": "chest", "granularity": "region" },
+    "shoulders": { "id": "shoulders", "granularity": "region" },
+    "core": { "id": "core", "granularity": "region" },
+    "spine": { "id": "spine", "granularity": "region" },
+    "groin": { "id": "groin", "granularity": "region" },
+    "grip muscles": { "id": "grip_muscles", "granularity": "region" },
+    "hands": { "id": "hands", "granularity": "region" },
+    "wrists": { "id": "wrists", "granularity": "region" },
+    "feet": { "id": "feet", "granularity": "region" },
+    "ankles": { "id": "ankles", "granularity": "region" },
+    "ankle stabilizers": { "id": "ankle_stabilizers", "granularity": "region" },
+    "shins": { "id": "shins", "granularity": "region" },
+    "cardiovascular system": { "id": "cardiovascular_system", "granularity": "system" }
+  },
+  "variant_name_tags": ["(male)", "(female)", "(back pov)", "(side pov)"],
+  "decisions": [
+    {
+      "id": "tax.add_unknown",
+      "change": "Se agregó 'unknown' a movement_pattern, exercise_type y mechanical_role.",
+      "reason": "'other' significa 'clasificado, pero fuera de la taxonomía'; 'unknown' significa 'no se pudo clasificar'. Mezclarlos oculta qué ejercicios faltan por revisar."
+    },
+    {
+      "id": "tax.add_knee_flexion",
+      "change": "Se agregó movement_pattern 'knee_flexion' (curl femoral, nordic).",
+      "reason": "El curl femoral flexiona la rodilla; clasificarlo como hip_dominant sería biomecánicamente incorrecto."
+    },
+    {
+      "id": "tax.add_small_joint_patterns",
+      "change": "Se agregaron 'ankle_plantarflexion', 'hip_abduction', 'hip_adduction', 'wrist' y 'scapular_elevation'.",
+      "reason": "El dataset tiene grupos grandes (59 de 'lower legs', 37 de 'lower arms', encogimientos, máquinas de abductores) que de otro modo caerían en 'other' y no podrían seleccionarse por patrón."
+    },
+    {
+      "id": "tax.add_trunk_stabilization",
+      "change": "Se agregó 'trunk_stabilization' (planchas, pallof press, rollouts, dead bug).",
+      "reason": "Son ejercicios anti-movimiento/isométricos; forzarlos a trunk_flexion o trunk_rotation describiría mal el estímulo."
+    },
+    {
+      "id": "tax.fly_as_horizontal_push",
+      "change": "Aperturas de pecho se clasifican como horizontal_push (isolation); aperturas invertidas/deltoide posterior como horizontal_pull (isolation).",
+      "reason": "Mecánicamente son aducción/abducción horizontal, no un empuje/tracción. Se agrupan así por uso en programación (mismo plano y músculos), con confianza media para dejarlo visible."
+    },
+    {
+      "id": "tax.equipment_access",
+      "change": "Se reemplazó gym_compatible por equipment_access (none/minimal/gym/unknown); home_compatible se deriva de él.",
+      "reason": "Cualquier ejercicio es compatible con un gimnasio, así que gym_compatible no aporta información. El nivel de acceso sí permite filtrar por lo que el usuario tiene."
+    },
+    {
+      "id": "tax.no_subjective_inference",
+      "change": "difficulty, technical_complexity, stability_demand y fatigue_cost no se infieren en v1 (quedan 'unknown' / not_assessed).",
+      "reason": "El dataset no contiene señales para estas variables. Deducirlas del nombre o del equipo sería inventar precisión; se llenan solo mediante overrides revisados."
+    },
+    {
+      "id": "tax.muscle_normalization_conservative",
+      "change": "Solo se fusionan sinónimos claros (abs/abdominals, delts/deltoids, lats/latissimus dorsi, quads/quadriceps, traps/trapezius). Términos de región (back, core, shoulders...) se marcan con granularity 'region'.",
+      "reason": "Fusionar región con músculo (p.ej. chest→pectorals) cambiaría el significado de la fuente."
+    },
+    {
+      "id": "tax.primary_muscle_from_target",
+      "change": "primary_muscles = target del dataset; se ignora muscle_group.",
+      "reason": "En los 1.324 registros muscle_group es igual a secondary_muscles[0]; no representa el músculo principal. Se respeta el target de la fuente aunque sea discutible (p.ej. sentadilla → glutes)."
+    }
+  ]
+}

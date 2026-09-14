@@ -1,0 +1,27 @@
+{
+  "id": "/",
+  "name": "Future Pro — Recomposición Corporal",
+  "short_name": "Future Pro",
+  "description": "Aplicación PWA frontend de fitness enfocada en recomposición corporal, sobrecarga progresiva y seguimiento metabólico.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f9fb",
+  "theme_color": "#f8f9fb",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["fitness", "health", "lifestyle"]
+}

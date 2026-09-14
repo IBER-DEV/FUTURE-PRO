@@ -1,0 +1,227 @@
+{
+  "metadata": {
+    "title": "Recomposition Knowledge Base",
+    "version": "1.0.0",
+    "description": "Base de conocimiento práctica y ejecutable para aplicaciones de recomposición corporal (Entrenamiento + Nutrición + Seguimiento), fundamentada en los posicionamientos oficiales del ACSM (2026) y la ISSN (2017).",
+    "target_population": "Adultos sanos (>=18 años) con objetivo de recomposición corporal (pérdida de grasa y conservación/ganancia muscular).",
+    "sources": [
+      {
+        "citation": "Currier BS et al. American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews. Med Sci Sports Exerc. 2026.",
+        "pmid": "41843416",
+        "scope": "Prescripción de entrenamiento de fuerza, volumen, frecuencia, intensidad y sobrecarga."
+      },
+      {
+        "citation": "Aragon AA et al. International society of sports nutrition position stand: diets and body composition. J Int Soc Sports Nutr. 2017.",
+        "pmid": "28630601",
+        "scope": "Nutrición, déficit energético, ingesta de proteína, tasa de pérdida de peso y composición corporal."
+      }
+    ]
+  },
+  "modules": {
+    "training": {
+      "description": "Reglas de entrenamiento de fuerza para maximizar hipertrofia y fuerza voluntaria.",
+      "rules": [
+        {
+          "id": "TR_VOL_HYPERSTROPHY",
+          "category": "Volumen",
+          "variable": "Series semanales por músculo",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Objetivo == 'Hipertrofia' OR Estado == 'Deficit_Calorico'",
+          "action": "Prescribir >= 10 series semanales por grupo muscular",
+          "scientific_evidence": "La hipertrofia muscular se optimiza acumulando volúmenes semanales de >=10 series por grupo muscular.",
+          "evidence_level": "Alta (Overview of Reviews - ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_VOL_STRENGTH",
+          "category": "Volumen",
+          "variable": "Series por ejercicio",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Objetivo_Ejercicio == 'Fuerza'",
+          "action": "Prescribir entre 2 y 3 series por ejercicio",
+          "scientific_evidence": "La fuerza voluntaria se potencia realizando de 2 a 3 series por ejercicio en cada sesión.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_FREQ_MIN",
+          "category": "Frecuencia",
+          "variable": "Sesiones semanales",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "General",
+          "action": "Establecer frecuencia >= 2 sesiones por semana",
+          "scientific_evidence": "La fuerza voluntaria aumenta significativamente con una frecuencia >=2 sesiones/semana.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_INTENSITY_HEAVY",
+          "category": "Intensidad",
+          "variable": "Carga (% 1RM)",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Objetivo_Ejercicio == 'Fuerza'",
+          "action": "Prescribir cargas >= 80% 1RM",
+          "scientific_evidence": "La fuerza voluntaria se potencia mediante la elevación de cargas pesadas (>=80% 1RM).",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_EXERCISE_ORDER",
+          "category": "Orden de Ejercicios",
+          "variable": "Posición en la rutina",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Ejercicio == 'Carga_Pesada'",
+          "action": "Ubicar el ejercicio al inicio de la sesión",
+          "scientific_evidence": "Levantar cargas pesadas al inicio de la sesión optimiza las ganancias de fuerza voluntaria.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_ROM_FULL",
+          "category": "Ejecución",
+          "variable": "Rango de movimiento",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "General",
+          "action": "Ejecutar en Rango Completo de Movimiento (Complete ROM)",
+          "scientific_evidence": "Entrenar a través de un rango completo de movimiento mejora la fuerza voluntaria.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_FAILURE_NOT_MANDATORY",
+          "category": "Proximidad al fallo",
+          "variable": "Fallo muscular",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "General",
+          "action": "No exigir fallo muscular obligatorio; detener serie cerca del fallo",
+          "scientific_evidence": "Entrenar hasta la fatiga muscular momentánea (fallo) no demostró un impacto consistente en las ganancias de fuerza ni hipertrofia.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        },
+        {
+          "id": "TR_EQUIPMENT_FLEXIBLE",
+          "category": "Selección de Ejercicios",
+          "variable": "Equipamiento",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "General",
+          "action": "Permitir indistintamente pesos libres, máquinas guiadas o poleas",
+          "scientific_evidence": "El tipo de equipamiento y la complejidad del ejercicio no alteran de forma consistente los resultados.",
+          "evidence_level": "Alta (ACSM 2026)",
+          "source_citation": "ACSM Position Stand (2026)"
+        }
+      ]
+    },
+    "nutrition": {
+      "description": "Reglas de balance energético y consumo proteico durante recomposición corporal.",
+      "rules": [
+        {
+          "id": "NUT_CALORIC_DEFICIT",
+          "category": "Energía",
+          "variable": "Balance calórico",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Objetivo == 'Perdida_Grasa'",
+          "action": "Prescribir déficit calórico (Calorías < TDEE)",
+          "scientific_evidence": "La pérdida de grasa corporal está impulsada indispensablemente por un déficit calórico sostenido.",
+          "evidence_level": "Alta (ISSN 2017)",
+          "source_citation": "ISSN Position Stand (2017)"
+        },
+        {
+          "id": "NUT_PROTEIN_DEFICIT",
+          "category": "Macronutrientes",
+          "variable": "Proteína en déficit",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Estado == 'Deficit_Calorico'",
+          "action": "Prescribir entre 1.6 - 2.4 g/kg de peso total (o 2.3 - 3.1 g/kg de FFM en sujetos magros/entrenados)",
+          "scientific_evidence": "Ingestas proteicas elevadas (1.6-2.4 g/kg o 2.3-3.1 g/kg FFM) maximizan la retención muscular y la pérdida de grasa bajo déficit calórico.",
+          "evidence_level": "Alta (ISSN 2017)",
+          "source_citation": "ISSN Position Stand (2017)"
+        },
+        {
+          "id": "NUT_LOSS_RATE",
+          "category": "Ritmo de Pérdida",
+          "variable": "Tasa semanal de pérdida de peso",
+          "priority": "IMPRESCINDIBLE",
+          "condition": "Perfil == 'Magro/Entrenado'",
+          "action": "Limitar ritmo de pérdida a 0.5% - 1.0% del peso corporal por semana",
+          "scientific_evidence": "Tasas conservadoras de pérdida de peso (0.5%-1.0% semanal) preservan mejor la masa magra que ritmos más acelerados.",
+          "evidence_level": "Alta (ISSN 2017)",
+          "source_citation": "ISSN Position Stand (2017)"
+        },
+        {
+          "id": "NUT_MACRO_FLEXIBILITY",
+          "category": "Macronutrientes",
+          "variable": "Grasas y Carbohidratos",
+          "priority": "ÚTIL",
+          "condition": "General",
+          "action": "Ajustar proporción de grasas y carbohidratos según preferencia del usuario mientras se cumpla el déficit y la proteína",
+          "scientific_evidence": "Diversas composiciones de dietas (bajas en grasa a cetogénicas) son igualmente efectivas para mejorar la composición corporal si las calorías y proteínas coinciden.",
+          "evidence_level": "Alta (ISSN 2017)",
+          "source_citation": "ISSN Position Stand (2017)"
+        }
+      ]
+    },
+    "monitoring": {
+      "description": "Lógica de seguimiento y criterios de ajuste en la aplicación.",
+      "questions_and_rules": [
+        {
+          "question": "¿Estoy perdiendo grasa?",
+          "rule_id": "MON_FAT_LOSS",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Tendencia_Peso == 'Descendente' AND Perimetro_Cintura == 'Descendente' ENTONCES Estado_Grasa = 'Perdiendo_Grasa'",
+          "scientific_rationale": "El déficit calórico se traduce en reducciones simultáneas del peso promedio y del perímetro abdominal."
+        },
+        {
+          "question": "¿Estoy manteniendo músculo?",
+          "rule_id": "MON_MUSCLE_RETENTION",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Rendimiento_Fuerza (>=80% 1RM) >= 'Constante' AND Ingesta_Proteina >= 'Meta' ENTONCES Estado_Músculo = 'Preservado'",
+          "scientific_rationale": "Mantener la fuerza en cargas pesadas bajo déficit confirma que la señal anabólica mecánica está activa."
+        },
+        {
+          "question": "¿Estoy perdiendo peso demasiado rápido?",
+          "rule_id": "MON_EXCESSIVE_LOSS_RATE",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Tasa_Pérdida_Semanal > 1.0%_Peso AND Perfil == 'Magro/Entrenado' ENTONCES Alerta = 'Pérdida_Acelerada_Riesgo_Músculo'",
+          "scientific_rationale": "Ritmos >1.0% semanal en personas magras incrementan el riesgo de degradación de masa libre de grasa."
+        },
+        {
+          "question": "¿Mi entrenamiento está funcionando?",
+          "rule_id": "MON_TRAINING_EFFECTIVENESS",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Volumen_Semanal >= 10_series/músculo AND Carga_Fuerza >= 80%_1RM ENTONCES Estado_Entrenamiento = 'Efectivo'",
+          "scientific_rationale": "Cumple los dos parámetros determinantes respaldados por la evidencia para fuerza e hipertrofia."
+        },
+        {
+          "question": "¿Debería mantener la estrategia?",
+          "rule_id": "MON_CONTINUE_PLAN",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Tasa_Pérdida <= 1.0% AND Rendimiento_Fuerza >= 'Constante' AND (Cintura == 'Descendente' OR Peso == 'Descendente') ENTONCES Decision = 'Mantener_Plan_Intacto'",
+          "scientific_rationale": "Si los indicadores de recomposición progresan, no se requieren ajustes en el estímulo ni en la dieta."
+        },
+        {
+          "question": "¿Qué debería revisar antes de cambiar el plan?",
+          "rule_id": "MON_AUDIT_SUBREPORTING",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Progreso == 'Estancado' ENTONCES Ejecutar = 'Auditoria_Subreporte_Nutricional_Y_NEAT' ANTES de ajustar calorías",
+          "scientific_rationale": "Los usuarios subreportan su ingesta en un promedio del 47% y sobreestiman el ejercicio en un 51% (Lichtman et al.)."
+        },
+        {
+          "question": "¿Debería modificar algo?",
+          "rule_id": "MON_ADJUST_PLAN",
+          "priority": "IMPRESCINDIBLE",
+          "logic": "SI Adherencia_Auditada == 'Correcta' AND Peso_Y_Cintura == 'Estancados_2_Semanas' ENTONCES Decision = 'Reducir_Calorias_O_Aumentar_Actividad'",
+          "scientific_rationale": "Tras descartar el subreporte, un estancamiento prolongado confirma la reducción del TDEE por adaptaciones metabólicas/NEAT."
+        }
+      ]
+    },
+    "undetermined_variables": {
+      "note": "Variables que NO se deben codificar con reglas fijas en V1 por falta de evidencia restrictiva en las fuentes analizadas.",
+      "items": [
+        "Tiempos fijos de descanso entre series (No reportados en las fuentes)",
+        "Rangos fijos de repeticiones obligatorios (ej. solo 8-12 reps)",
+        "Algoritmos cuantitativos fijos basados en RIR (Repeticiones en Reserva)",
+        "Modelos de periodización estructurada rígida (Ondulante/Bloques)"
+      ]
+    }
+  }
+}

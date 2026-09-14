@@ -1,0 +1,773 @@
+{
+  "schema_version": "1.1.0",
+  "knowledge_version": "1.2.0",
+  "domain": "recomposition",
+  "title": "Recomposition Knowledge Base v1",
+  "derived_from": "knowledge/recomposition/research/recomposition_knowledge_base.json (módulo 'monitoring'); verificado contra ACSM 2026 (PMC12965823) e ISSN 2017 (PMC5470183) el 2026-09-14",
+  "target_population": "Adultos sanos (>=18 años) con objetivo de recomposición corporal",
+  "import_notes": [
+    "Los módulos 'training' y 'nutrition' de la investigación NO se importan como reglas: duplican training/rules.json y nutrition/rules.json. Donde coinciden, ya están cubiertos; donde difieren, quedan en 'conflicts' hasta que el autor decida.",
+    "'undetermined_variables' ya está cubierto por training/rules.json (gap.rest_between_sets, gap.rep_ranges, gap.rir_targets y training.progression.periodization_model_any)."
+  ],
+  "facts": {
+    "weight_trend": {
+      "type": "enum",
+      "values": [
+        "decreasing",
+        "stable",
+        "increasing"
+      ],
+      "description": "Tendencia del peso promedio. Ventana y umbrales no definidos: ver gap.trend_definitions."
+    },
+    "waist_trend": {
+      "type": "enum",
+      "values": [
+        "decreasing",
+        "stable",
+        "increasing"
+      ],
+      "description": "Tendencia del perímetro de cintura. Ventana y umbrales no definidos: ver gap.trend_definitions."
+    },
+    "heavy_load_strength_trend": {
+      "type": "enum",
+      "values": [
+        "decreasing",
+        "stable",
+        "increasing"
+      ],
+      "description": "Tendencia del rendimiento de fuerza con cargas >=80% 1RM. Requiere estimar 1RM: ver gap.one_rm_tracking."
+    },
+    "protein_intake_meets_target": {
+      "type": "boolean",
+      "description": "La ingesta de proteína alcanza la meta definida por nutrition.protein.athletic_baseline o nutrition.protein.deficit_lean_trained_ffm según el perfil."
+    },
+    "weekly_weight_loss_pct": {
+      "type": "number",
+      "description": "Pérdida de peso semanal en % del peso corporal (positivo = pérdida)."
+    },
+    "is_athlete_or_lean": {
+      "type": "boolean",
+      "description": "El usuario es atleta o una persona delgada/entrenada (perfil ATLETA_O_DELGADO / 'Magro/Entrenado')."
+    },
+    "min_weekly_sets_per_muscle_group": {
+      "type": "number",
+      "min": 0,
+      "description": "Menor número de series semanales entre los grupos musculares entrenados."
+    },
+    "strength_work_load_pct_1rm": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "description": "Carga del trabajo de fuerza en % de 1RM."
+    },
+    "progress_status": {
+      "type": "enum",
+      "values": [
+        "progressing",
+        "stalled"
+      ],
+      "description": "Estado global del progreso. Criterio de 'estancado' no definido: ver gap.trend_definitions."
+    },
+    "intake_audit_result": {
+      "type": "enum",
+      "values": [
+        "not_done",
+        "correct",
+        "underreporting_found"
+      ],
+      "description": "Resultado de la auditoría de registro de ingesta y actividad."
+    },
+    "weeks_weight_and_waist_stalled": {
+      "type": "number",
+      "min": 0,
+      "description": "Semanas consecutivas con peso y cintura estancados."
+    }
+  },
+  "variables": {},
+  "signals": {
+    "fat_loss_status": {
+      "type": "enum",
+      "values": [
+        "losing_fat",
+        "recomposition_likely",
+        "likely_gaining_fat"
+      ],
+      "description": "Evaluación de pérdida de grasa."
+    },
+    "muscle_status": {
+      "type": "enum",
+      "values": [
+        "preserved",
+        "possible_loss"
+      ],
+      "description": "Evaluación de conservación muscular."
+    },
+    "rapid_loss_muscle_risk": {
+      "type": "boolean",
+      "description": "Pérdida de peso acelerada con riesgo para la masa muscular."
+    },
+    "training_status": {
+      "type": "enum",
+      "values": [
+        "effective"
+      ],
+      "description": "Evaluación del entrenamiento."
+    },
+    "plan_decision": {
+      "type": "enum",
+      "values": [
+        "maintain",
+        "audit_intake_and_activity",
+        "reduce_calories_or_increase_activity"
+      ],
+      "description": "Decisión sobre el plan en el check-in."
+    },
+    "calorie_reduction_allowed": {
+      "type": "boolean",
+      "description": "El motor puede reducir calorías en este momento."
+    }
+  },
+  "rules": [
+    {
+      "id": "recomposition.assess.fat_loss",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Estoy perdiendo grasa?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weight_trend",
+            "op": "eq",
+            "value": "decreasing"
+          },
+          {
+            "fact": "waist_trend",
+            "op": "eq",
+            "value": "decreasing"
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "fat_loss_status",
+          "value": "losing_fat"
+        }
+      ],
+      "finding": "El déficit calórico se traduce en reducciones simultáneas del peso promedio y del perímetro abdominal.",
+      "limitations": [],
+      "review_notes": [
+        "No cubre el caso típico de recomposición (peso estable + cintura bajando): ver gap.weight_stable_waist_decreasing."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "author_extracted",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "MON_FAT_LOSS",
+        "condition": "Tendencia_Peso == 'Descendente' AND Perimetro_Cintura == 'Descendente'",
+        "action": "Estado_Grasa = 'Perdiendo_Grasa'"
+      }
+    },
+    {
+      "id": "recomposition.assess.muscle_retention",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Estoy manteniendo músculo?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "heavy_load_strength_trend",
+            "op": "in",
+            "value": [
+              "stable",
+              "increasing"
+            ]
+          },
+          {
+            "fact": "protein_intake_meets_target",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "muscle_status",
+          "value": "preserved"
+        }
+      ],
+      "finding": "Mantener la fuerza en cargas pesadas bajo déficit confirma que la señal anabólica mecánica está activa.",
+      "limitations": [],
+      "review_notes": [
+        "La fuerza es un indicador indirecto: no mide masa muscular directamente."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "author_extracted",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "MON_MUSCLE_RETENTION",
+        "condition": "Rendimiento_Fuerza (>=80% 1RM) >= 'Constante' AND Ingesta_Proteina >= 'Meta'",
+        "action": "Estado_Músculo = 'Preservado'"
+      }
+    },
+    {
+      "id": "recomposition.assess.recomposition_likely",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Estoy perdiendo grasa?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weight_trend",
+            "op": "eq",
+            "value": "stable"
+          },
+          {
+            "fact": "waist_trend",
+            "op": "eq",
+            "value": "decreasing"
+          },
+          {
+            "fact": "heavy_load_strength_trend",
+            "op": "in",
+            "value": [
+              "stable",
+              "increasing"
+            ]
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "fat_loss_status",
+          "value": "recomposition_likely"
+        }
+      ],
+      "message": "Tu peso se mantiene, pero la cintura baja y la fuerza se sostiene: probablemente estás perdiendo grasa y conservando o ganando músculo.",
+      "see_rules": [
+        "recomposition.decide.maintain_plan"
+      ],
+      "finding": "Decisión de diseño: con peso estable, una cintura que baja y fuerza estable o en aumento es el patrón esperado de recomposición.",
+      "limitations": [
+        "La cintura y la fuerza son indicadores indirectos; no miden grasa ni músculo directamente."
+      ],
+      "design_ref": "design.evaluation_matrix",
+      "evidence": {
+        "source_id": null,
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "design_decision",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": null,
+        "condition": "design.evaluation_matrix",
+        "action": "Peso estable + cintura bajando + fuerza estable/subiendo → recomposición probable"
+      }
+    },
+    {
+      "id": "recomposition.assess.possible_muscle_loss",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Estoy manteniendo músculo?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weight_trend",
+            "op": "eq",
+            "value": "decreasing"
+          },
+          {
+            "fact": "waist_trend",
+            "op": "eq",
+            "value": "stable"
+          },
+          {
+            "fact": "heavy_load_strength_trend",
+            "op": "eq",
+            "value": "decreasing"
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "muscle_status",
+          "value": "possible_loss"
+        }
+      ],
+      "message": "Bajas de peso sin que baje la cintura y tu fuerza cae: revisa proteína, ritmo de pérdida y que sigas entrenando con esfuerzo alto.",
+      "see_rules": [
+        "nutrition.safety.lean_mass_loss_risk",
+        "nutrition.protein.athletic_baseline",
+        "recomposition.alert.excessive_loss_rate",
+        "training.effort.sufficient_effort"
+      ],
+      "finding": "Decisión de diseño: si el peso baja pero la cintura no, y la fuerza cae, la pérdida podría incluir masa magra.",
+      "limitations": [
+        "La fuerza también cae por fatiga, mal descanso o cambios de técnica; no es prueba de pérdida muscular."
+      ],
+      "design_ref": "design.evaluation_matrix",
+      "evidence": {
+        "source_id": null,
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "design_decision",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": null,
+        "condition": "design.evaluation_matrix",
+        "action": "Peso bajando + cintura estable + fuerza bajando → posible pérdida muscular"
+      }
+    },
+    {
+      "id": "recomposition.assess.likely_fat_gain",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Estoy perdiendo grasa?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weight_trend",
+            "op": "eq",
+            "value": "increasing"
+          },
+          {
+            "fact": "waist_trend",
+            "op": "eq",
+            "value": "increasing"
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "fat_loss_status",
+          "value": "likely_gaining_fat"
+        },
+        {
+          "signal": "plan_decision",
+          "value": "audit_intake_and_activity"
+        }
+      ],
+      "message": "Peso y cintura suben: probablemente estás comiendo por encima de tu gasto. Revisa el registro de comida antes de cambiar el plan.",
+      "see_rules": [
+        "nutrition.monitoring.plateau_audit_before_cut"
+      ],
+      "finding": "Decisión de diseño: subidas simultáneas de peso y cintura en fase de déficit indican un probable superávit real.",
+      "limitations": [],
+      "design_ref": "design.evaluation_matrix",
+      "evidence": {
+        "source_id": null,
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "design_decision",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": null,
+        "condition": "design.evaluation_matrix",
+        "action": "Peso subiendo + cintura subiendo → probable ganancia de grasa, auditar"
+      }
+    },
+    {
+      "id": "recomposition.alert.excessive_loss_rate",
+      "category": "monitoring",
+      "kind": "alert",
+      "priority": "essential",
+      "question": "¿Estoy perdiendo peso demasiado rápido?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weekly_weight_loss_pct",
+            "op": "gt",
+            "value": 1
+          },
+          {
+            "fact": "is_athlete_or_lean",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "rapid_loss_muscle_risk",
+          "value": true
+        }
+      ],
+      "see_rules": [
+        "nutrition.rate.lean_or_athlete",
+        "nutrition.safety.lean_mass_loss_risk"
+      ],
+      "finding": "Ritmos >1.0% semanal en personas magras incrementan el riesgo de degradación de masa libre de grasa.",
+      "limitations": [],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "ISSN 2017, Conclusions and recommendations (Garthe et al. 0,7% vs 1,4%; Helms et al. 0,5-1,0%)",
+        "review_status": "verified",
+        "basis": "evidence"
+      },
+      "original": {
+        "id": "MON_EXCESSIVE_LOSS_RATE",
+        "condition": "Tasa_Pérdida_Semanal > 1.0%_Peso AND Perfil == 'Magro/Entrenado'",
+        "action": "Alerta = 'Pérdida_Acelerada_Riesgo_Músculo'"
+      }
+    },
+    {
+      "id": "recomposition.assess.training_effectiveness",
+      "category": "monitoring",
+      "kind": "assessment",
+      "priority": "essential",
+      "question": "¿Mi entrenamiento está funcionando?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "min_weekly_sets_per_muscle_group",
+            "op": "gte",
+            "value": 10
+          },
+          {
+            "fact": "strength_work_load_pct_1rm",
+            "op": "gte",
+            "value": 80
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "training_status",
+          "value": "effective"
+        }
+      ],
+      "see_rules": [
+        "training.volume.hypertrophy_min_weekly_sets",
+        "training.intensity.strength_heavy_load",
+        "training.intensity.hypertrophy_load_any",
+        "training.effort.sufficient_effort"
+      ],
+      "finding": "Cumple los dos parámetros determinantes respaldados por la evidencia para fuerza e hipertrofia.",
+      "limitations": [],
+      "review_notes": [
+        "Mide cumplimiento de la prescripción, no resultados: un plan puede cumplir ambos criterios y aun así no progresar.",
+        "Verificado en ACSM 2026: la carga (30-100% 1RM) no afectó la hipertrofia; el criterio >=80% 1RM solo es relevante para fuerza. Para conservar/ganar músculo el criterio respaldado es el volumen (>=10 series/semana) con esfuerzo suficiente (training.effort.sufficient_effort)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "author_extracted",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "MON_TRAINING_EFFECTIVENESS",
+        "condition": "Volumen_Semanal >= 10_series/músculo AND Carga_Fuerza >= 80%_1RM",
+        "action": "Estado_Entrenamiento = 'Efectivo'"
+      }
+    },
+    {
+      "id": "recomposition.decide.maintain_plan",
+      "category": "monitoring",
+      "kind": "decision",
+      "priority": "essential",
+      "question": "¿Debería mantener la estrategia?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weekly_weight_loss_pct",
+            "op": "lte",
+            "value": 1
+          },
+          {
+            "fact": "heavy_load_strength_trend",
+            "op": "in",
+            "value": [
+              "stable",
+              "increasing"
+            ]
+          },
+          {
+            "any": [
+              {
+                "fact": "waist_trend",
+                "op": "eq",
+                "value": "decreasing"
+              },
+              {
+                "fact": "weight_trend",
+                "op": "eq",
+                "value": "decreasing"
+              }
+            ]
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "plan_decision",
+          "value": "maintain"
+        }
+      ],
+      "finding": "Si los indicadores de recomposición progresan, no se requieren ajustes en el estímulo ni en la dieta.",
+      "limitations": [],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "author_extracted",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "MON_CONTINUE_PLAN",
+        "condition": "Tasa_Pérdida <= 1.0% AND Rendimiento_Fuerza >= 'Constante' AND (Cintura == 'Descendente' OR Peso == 'Descendente')",
+        "action": "Decision = 'Mantener_Plan_Intacto'"
+      }
+    },
+    {
+      "id": "recomposition.decide.audit_before_adjusting",
+      "category": "monitoring",
+      "kind": "decision",
+      "priority": "essential",
+      "question": "¿Qué debería revisar antes de cambiar el plan?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "progress_status",
+            "op": "eq",
+            "value": "stalled"
+          },
+          {
+            "fact": "intake_audit_result",
+            "op": "neq",
+            "value": "correct"
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "plan_decision",
+          "value": "audit_intake_and_activity"
+        },
+        {
+          "signal": "calorie_reduction_allowed",
+          "value": false
+        }
+      ],
+      "see_rules": [
+        "nutrition.monitoring.plateau_audit_before_cut"
+      ],
+      "finding": "Los usuarios subreportan su ingesta en un promedio del 47% y sobreestiman el ejercicio en un 51%.",
+      "limitations": [],
+      "review_notes": [
+        "Se agregó intake_audit_result != 'correct' para expresar 'ANTES de ajustar calorías'; sin eso chocaría con recomposition.decide.adjust_plan una vez hecha la auditoría.",
+        "Verificado: los porcentajes provienen de personas con obesidad y resistencia a la dieta autodeclarada; la fuente advierte que el mal registro puede confundirse con adaptación metabólica."
+      ],
+      "evidence": {
+        "source_id": "LICHTMAN_VIA_ISSN_2017",
+        "quality": "not_stated",
+        "locator": "ISSN 2017, sección Adaptations to underfeeding (Lichtman et al. [131])",
+        "review_status": "verified",
+        "basis": "evidence"
+      },
+      "original": {
+        "id": "MON_AUDIT_SUBREPORTING",
+        "condition": "Progreso == 'Estancado'",
+        "action": "Ejecutar = 'Auditoria_Subreporte_Nutricional_Y_NEAT' ANTES de ajustar calorías"
+      }
+    },
+    {
+      "id": "recomposition.decide.adjust_plan",
+      "category": "monitoring",
+      "kind": "decision",
+      "priority": "essential",
+      "question": "¿Debería modificar algo?",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "intake_audit_result",
+            "op": "eq",
+            "value": "correct"
+          },
+          {
+            "fact": "weeks_weight_and_waist_stalled",
+            "op": "gte",
+            "value": 2
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "plan_decision",
+          "value": "reduce_calories_or_increase_activity"
+        },
+        {
+          "signal": "calorie_reduction_allowed",
+          "value": true
+        }
+      ],
+      "finding": "Tras descartar el subreporte, un estancamiento prolongado confirma la reducción del TDEE por adaptaciones metabólicas/NEAT.",
+      "limitations": [],
+      "review_notes": [
+        "No cuantifica cuánto reducir calorías ni cuánto aumentar actividad: ver gap.adjustment_magnitude.",
+        "Choca con nutrition.monitoring.plateau_audit_before_cut, que bloquea la reducción de calorías sin mirar si la auditoría ya se hizo.",
+        "La justificación original (\"confirma la reducción del TDEE\") es más fuerte que la fuente: el ISSN describe la termogénesis adaptativa y que se evitó con fuerza + proteína adecuada (nutrition.energy.adaptive_tdee_correction)."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": null,
+        "review_status": "author_extracted",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "MON_ADJUST_PLAN",
+        "condition": "Adherencia_Auditada == 'Correcta' AND Peso_Y_Cintura == 'Estancados_2_Semanas'",
+        "action": "Decision = 'Reducir_Calorias_O_Aumentar_Actividad'"
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap.trend_definitions",
+      "variable": "weight_trend / waist_trend / heavy_load_strength_trend / progress_status",
+      "status": "not_determined",
+      "note": "'Descendente', 'Constante' y 'Estancado' no tienen ventana temporal, suavizado ni umbral mínimo de cambio.",
+      "app_impact": "Sin esto ninguna regla de monitoring se puede evaluar. El peso diario fluctúa; es una decisión de diseño (p.ej. promedio móvil semanal).",
+      "source_id": null,
+      "design_decision": "design.trends"
+    },
+    {
+      "id": "gap.weight_stable_waist_decreasing",
+      "variable": "fat_loss_status",
+      "status": "not_determined",
+      "note": "recomposition.assess.fat_loss exige que peso y cintura bajen juntos. El escenario central del producto (peso estable, cintura bajando, fuerza estable o subiendo) no produce ninguna evaluación de grasa.",
+      "app_impact": "La app no podría responder '¿estoy perdiendo grasa?' justo en el caso de recomposición.",
+      "source_id": null,
+      "design_decision": "design.evaluation_matrix"
+    },
+    {
+      "id": "gap.one_rm_tracking",
+      "variable": "strength_work_load_pct_1rm",
+      "status": "not_determined",
+      "note": "Varias reglas usan % 1RM, pero ninguna fuente de esta base define cómo estimarlo a partir de lo que se registra.",
+      "app_impact": "LiveWorkoutView registra kg x reps x RIR, no 1RM. Estimar un 1RM (p.ej. con una fórmula) sería una decisión de diseño.",
+      "source_id": null,
+      "design_decision": "design.one_rm_estimation"
+    },
+    {
+      "id": "gap.adjustment_magnitude",
+      "variable": "calorie_or_activity_adjustment",
+      "status": "not_determined",
+      "note": "MON_ADJUST_PLAN no dice cuánto reducir calorías ni cuánto aumentar la actividad.",
+      "app_impact": "El motor puede decidir 'ajustar', pero no calcular el nuevo objetivo.",
+      "source_id": null,
+      "design_decision": "design.energy_expenditure"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "conflict.protein_in_deficit",
+      "status": "resolved",
+      "description": "Dos prescripciones distintas de proteína en déficit.",
+      "versions": [
+        {
+          "file": "knowledge/recomposition/research/recomposition_knowledge_base.json",
+          "rule": "NUT_PROTEIN_DEFICIT",
+          "text": "Estado == 'Deficit_Calorico' → 1.6-2.4 g/kg de peso total (o 2.3-3.1 g/kg FFM en magros/entrenados)"
+        },
+        {
+          "file": "knowledge/nutrition/research/Nutrition_Knowledge_Base.json",
+          "rule": "RULE_004 / RULE_003",
+          "text": "Déficit + entrenado + grasa baja/moderada → 2.3-3.1 g/kg FFM. El rango 1.6-2.4 g/kg no aparece; el único rango por peso total es 1.4-2.0 g/kg (mantenimiento/superávit)."
+        }
+      ],
+      "affects": [
+        "nutrition.protein.athletic_baseline",
+        "nutrition.protein.deficit_lean_trained_ffm",
+        "recomposition.assess.muscle_retention"
+      ],
+      "resolution": "Se descarta 1,6-2,4 g/kg de peso total: no es una recomendación del ISSN 2017, sino dosis de estudios individuales que el paper cita (1,6 g/kg Lemon et al.; 2,4 g/kg Pasiakos et al. y Longland et al.). Queda la recomendación del ISSN: 1,4-2,0 g/kg para poblaciones activas en cualquier fase (corregida: ya no se limita a mantenimiento/superávit) y 2,3-3,1 g/kg FFM que pueden requerirse en personas magras entrenadas en déficit.",
+      "resolution_evidence": "ISSN 2017, Conclusions and recommendations; sección High-protein diets."
+    },
+    {
+      "id": "conflict.hypertrophy_volume_in_deficit",
+      "status": "resolved",
+      "description": "La investigación de recomposición extiende la regla de volumen al déficit calórico; la de entrenamiento no.",
+      "versions": [
+        {
+          "file": "knowledge/recomposition/research/recomposition_knowledge_base.json",
+          "rule": "TR_VOL_HYPERSTROPHY",
+          "text": "Objetivo == 'Hipertrofia' OR Estado == 'Deficit_Calorico' → >=10 series/semana"
+        },
+        {
+          "file": "knowledge/training/research/training_rules.json",
+          "rule": "RULE_VOL_HYPERSTROPHY_MIN",
+          "text": "Objetivo == 'Hipertrofia' → >=10 series/semana. Además, 'ajuste específico por déficit calórico' figura como no determinado en las fuentes."
+        }
+      ],
+      "affects": [
+        "training.volume.hypertrophy_min_weekly_sets"
+      ],
+      "resolution": "Se mantiene la versión de entrenamiento (solo target_adaptation == hypertrophy). El ACSM 2026 no menciona déficit calórico, dieta ni pérdida de peso en ningún punto del texto completo, así que la extensión al déficit no tiene respaldo en esta base.",
+      "resolution_evidence": "ACSM 2026, texto completo (búsqueda de deficit / caloric / energy restriction / weight loss / hypocaloric / dietary: 0 resultados)."
+    },
+    {
+      "id": "conflict.proximity_to_failure",
+      "status": "resolved",
+      "description": "La investigación de recomposición prescribe detenerse 'cerca del fallo'; la de entrenamiento solo dice que el fallo no es necesario y que la fuente no especifica RIR.",
+      "versions": [
+        {
+          "file": "knowledge/recomposition/research/recomposition_knowledge_base.json",
+          "rule": "TR_FAILURE_NOT_MANDATORY",
+          "text": "No exigir fallo muscular obligatorio; detener serie cerca del fallo"
+        },
+        {
+          "file": "knowledge/training/research/training_rules.json",
+          "rule": "RULE_FAILURE_OPTIONAL",
+          "text": "No requerir fallo muscular absoluto. Limitación: las fuentes no especifican valores de RIR."
+        }
+      ],
+      "affects": [
+        "training.effort.failure_not_required",
+        "training.effort.sufficient_effort"
+      ],
+      "resolution": "Ambas versiones eran parciales. El ACSM dice que el fallo no es necesario, pero que se requiere esfuerzo suficiente, alcanzable con series cerca del fallo o una meta de 2-3 RIR, y que no hay evidencia para cuantificar metas exactas de RIR. Se agregó training.effort.sufficient_effort (esfuerzo alto) sin RIR fijo y se mantiene training.effort.failure_not_required.",
+      "resolution_evidence": "ACSM 2026, Discussion (primary recommendation; failure; RIR)."
+    },
+    {
+      "id": "conflict.macro_distribution",
+      "status": "resolved",
+      "description": "Flexibilidad total de grasas/carbohidratos vs. rango fijo de grasas.",
+      "versions": [
+        {
+          "file": "knowledge/recomposition/research/recomposition_knowledge_base.json",
+          "rule": "NUT_MACRO_FLEXIBILITY",
+          "text": "Ajustar grasas y carbohidratos según preferencia; dietas de bajas en grasa a cetogénicas son igualmente efectivas si calorías y proteína coinciden."
+        },
+        {
+          "file": "knowledge/nutrition/research/Nutrition_Knowledge_Base.json",
+          "rule": "RULE_010",
+          "text": "Grasas 20-35% del TDEE; alerta con carbohidratos <50 g/día en alta intensidad. Una dieta cetogénica quedaría fuera de ese rango."
+        }
+      ],
+      "affects": [
+        "nutrition.macros.distribution_any",
+        "nutrition.safety.low_carb_endurance_performance"
+      ],
+      "resolution": "Gana la flexibilidad (Position Statement 5 del ISSN: dietas desde bajas en grasa hasta cetogénicas son similarmente efectivas). La regla de grasa 20-35% se eliminó: en la fuente es la definición de dieta baja en grasa según el AMDR (sobre la energía total), no una recomendación. La alerta de carbohidratos bajos se limitó a deportes de resistencia o alta intensidad.",
+      "resolution_evidence": "ISSN 2017, Position Statement 5; sección Low-fat diets; Conclusions and recommendations."
+    }
+  ]
+}

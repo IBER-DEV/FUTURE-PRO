@@ -1,0 +1,6 @@
+{
+  "name": "Future Pro — Recomposición Corporal",
+  "description": "Aplicación PWA frontend de fitness enfocada en recomposición corporal, sobrecarga progresiva y seguimiento metabólico con estética editorial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

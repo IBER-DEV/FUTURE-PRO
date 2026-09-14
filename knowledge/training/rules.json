@@ -1,0 +1,877 @@
+{
+  "schema_version": "1.1.0",
+  "knowledge_version": "1.1.0",
+  "domain": "training",
+  "title": "Training Knowledge Base v1",
+  "derived_from": "knowledge/training/research/training_rules.json + knowledge/training/research/evidence.md; verificado contra el texto completo del ACSM 2026 (PMC12965823) el 2026-09-14",
+  "target_population": "Adultos sanos (>=18 años), de novatos a entrenados",
+  "verification_notes": [
+    "evidence.quality = 'not_stated': el ACSM no asigna etiquetas alta/moderada/baja. Su calificación propia es un porcentaje QoE por conclusión (Tabla 4), registrado en evidence.source_grade. Las etiquetas 'Alta' de la investigación original no provienen de la fuente.",
+    "Leyenda Tabla 4 del ACSM: impacta / no impacta / no se puede determinar, con n.º de revisiones, participantes y QoE (0-100%)."
+  ],
+  "facts": {
+    "target_adaptation": {
+      "type": "enum",
+      "values": [
+        "strength",
+        "hypertrophy",
+        "power"
+      ],
+      "description": "Adaptación buscada por el bloque o ejercicio. Unifica 'Objetivo' y 'Objetivo_Ejercicio' de la investigación, que en la fuente se refieren a los mismos tres desenlaces."
+    },
+    "exercise.load_pct_1rm": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "description": "Carga prescrita del ejercicio como % de 1RM. Sustituye 'Ejercicio_Tipo == Carga_Pesada_Fuerza' usando el umbral de carga pesada de la propia fuente (>=80%)."
+    },
+    "advanced_techniques_enabled": {
+      "type": "boolean",
+      "description": "El plan permite técnicas avanzadas. Sustituye 'Modulo_Hipertrofia_Avanzada' de la investigación."
+    }
+  },
+  "variables": {
+    "weekly_sets_per_muscle_group": {
+      "unit": "sets/week"
+    },
+    "sets_per_exercise": {
+      "unit": "sets"
+    },
+    "sessions_per_week": {
+      "unit": "sessions/week"
+    },
+    "load_pct_1rm": {
+      "unit": "%1RM"
+    },
+    "effort": {
+      "values": [
+        "high"
+      ]
+    },
+    "movement_coverage": {
+      "values": [
+        "upper_lower_push_pull"
+      ]
+    },
+    "exercise_position_in_session": {
+      "values": [
+        "start"
+      ]
+    },
+    "range_of_motion": {
+      "values": [
+        "full"
+      ]
+    },
+    "progressive_overload": {
+      "values": [
+        "required"
+      ]
+    },
+    "train_to_failure": {
+      "values": [
+        "not_required"
+      ]
+    },
+    "equipment_type": {
+      "values": [
+        "any"
+      ]
+    },
+    "exercise_complexity": {
+      "values": [
+        "any"
+      ]
+    },
+    "eccentric_overload": {
+      "values": [
+        "enabled"
+      ]
+    },
+    "concentric_velocity": {
+      "values": [
+        "fast"
+      ]
+    },
+    "total_reps_per_exercise": {
+      "unit": "reps (reps x series)"
+    },
+    "set_structure": {
+      "values": [
+        "any"
+      ]
+    },
+    "time_under_tension": {
+      "values": [
+        "any"
+      ]
+    },
+    "blood_flow_restriction": {
+      "values": [
+        "any"
+      ]
+    },
+    "periodization_model": {
+      "values": [
+        "any"
+      ]
+    }
+  },
+  "rules": [
+    {
+      "id": "training.effort.sufficient_effort",
+      "category": "effort",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "effort",
+          "value": "high"
+        }
+      ],
+      "finding": "Recomendación principal: los adultos sanos deben entrenar fuerza con esfuerzo alto, al menos dos veces por semana, involucrando todos los grupos musculares principales. Se requiere un estímulo adecuado; el esfuerzo suficiente puede lograrse con series 'cerca del fallo' o con una meta de 2-3 repeticiones en reserva (RIR).",
+      "limitations": [],
+      "review_notes": [
+        "Agregada al resolver conflict.proximity_to_failure (investigación de recomposición: 'detener serie cerca del fallo').",
+        "'Cerca del fallo' y '2-3 RIR' son ejemplos de cómo lograr esfuerzo suficiente, no metas cuantificadas: el mismo documento dice que no hay evidencia suficiente para fijar RIR o esfuerzo percibido exactos (ver gap.rir_targets)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Recomendación principal de los autores (Discusión); sin QoE propio",
+        "locator": "Discussion: 'Our primary recommendation is that healthy adults perform RT with high effort...'; 'Sufficient effort ... can be accomplished by completing sets with various RTx and completion of \"near-failure\" or a target of 2–3 repetitions in reserve (RIR)'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "TR_FAILURE_NOT_MANDATORY",
+        "condition": "General",
+        "action": "No exigir fallo muscular obligatorio; detener serie cerca del fallo"
+      }
+    },
+    {
+      "id": "training.volume.hypertrophy_min_weekly_sets",
+      "category": "volume",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "hypertrophy"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "weekly_sets_per_muscle_group",
+          "min": 10
+        }
+      ],
+      "finding": "La hipertrofia muscular se incrementa acumulando volúmenes más altos (>=10 series/semana por grupo muscular, dosis-respuesta).",
+      "limitations": [
+        "No establece un límite máximo superior de volumen recuperable."
+      ],
+      "review_notes": [
+        "La Discusión cita una meta-regresión con rendimientos decrecientes más allá de ~18-20 series semanales para hipertrofia: no es un máximo, pero sí el punto donde el beneficio adicional se aplana.",
+        "La fuente no menciona déficit calórico en ningún punto; la extensión 'OR Estado == Deficit_Calorico' de la investigación de recomposición se descartó (conflict.hypertrophy_volume_in_deficit)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Volume: Sets → hipertrofia: impacta (5 revisiones, n=2.267, QoE 50%)",
+        "locator": "Abstract; Tabla 6 'Volume: ≥10 sets/wk (dose-response)'; Discussion (meta-regresión, ~18–20 weekly sets)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_VOL_HYPERSTROPHY_MIN",
+        "condition": "Objetivo == 'Hipertrofia'",
+        "action": "Establecer volumen semanal >= 10 series por grupo muscular"
+      }
+    },
+    {
+      "id": "training.volume.strength_sets_per_exercise",
+      "category": "volume",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "strength"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "sets_per_exercise",
+          "min": 2,
+          "max": 3
+        }
+      ],
+      "finding": "La fuerza voluntaria se potencia realizando de 2 a 3 series por ejercicio; se aconseja al menos dos series por ejercicio, con rendimientos decrecientes más allá de ~2-3.",
+      "limitations": [
+        "No evalúa si realizar más de 3 series por ejercicio ofrece ventajas adicionales de fuerza."
+      ],
+      "review_notes": [
+        "La Tabla 6 lo expresa como '2–3 sets/session', pero la Discusión lo formula por ejercicio ('at least two sets per exercise'). Se mantiene por ejercicio."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Volume: Sets → fuerza: impacta (7 revisiones, n=5.633, QoE 71%)",
+        "locator": "Abstract; Tabla 6; Discussion ('healthy adults are advised to complete at least two sets per exercise')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_VOL_STRENGTH_SETS",
+        "condition": "Objetivo_Ejercicio == 'Fuerza'",
+        "action": "Prescribir entre 2 y 3 series por ejercicio"
+      }
+    },
+    {
+      "id": "training.frequency.min_weekly_sessions",
+      "category": "frequency",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "sessions_per_week",
+          "min": 2
+        }
+      ],
+      "finding": "La fuerza voluntaria se incrementa entrenando con una frecuencia >=2 sesiones/semana; la recomendación principal del documento también es entrenar al menos dos veces por semana.",
+      "limitations": [
+        "No especifica frecuencia óptima por grupo muscular individual ni si frecuencias >2 días/semana son mejores."
+      ],
+      "review_notes": [
+        "Para hipertrofia la frecuencia no tuvo impacto cuando el volumen total estaba igualado (1 vs >5 días/semana): el mínimo de 2 sesiones sale de fuerza y de la recomendación general."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Frequency → fuerza: impacta (4 revisiones, n=3.531, QoE 69%); hipertrofia: no impacta (4 revisiones, n=3.177, QoE 63%)",
+        "locator": "Abstract; Tabla 6; Results 'Improving hypertrophy'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_FREQ_MIN_WEEKLY",
+        "condition": "General",
+        "action": "Frecuencia semanal >= 2 sesiones/semana"
+      }
+    },
+    {
+      "id": "training.selection.major_muscle_groups",
+      "category": "exercise_selection",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "movement_coverage",
+          "value": "upper_lower_push_pull"
+        }
+      ],
+      "finding": "Todos los grupos musculares principales deben involucrarse. En opinión de los autores, aplicar las recomendaciones a empuje y tracción de tren superior e inferior (cuatro regiones) es suficiente; para tren superior también pueden considerarse las direcciones horizontal y vertical (seis regiones), por sesión o por semana según objetivos.",
+      "limitations": [
+        "La evidencia disponible no comparó regiones corporales ni grupos musculares distintos."
+      ],
+      "review_notes": [
+        "Mapea directamente a movement_pattern de la Exercise KB (horizontal/vertical push/pull, knee_dominant, hip_dominant)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Opinión de los autores (Discusión); sin QoE",
+        "locator": "Discussion: 'In the view of the authors, applying the recommendations herein to the body regions \"upper\" and \"lower\" for \"push\" and \"pull\" exercises ... is sufficient'",
+        "review_status": "verified",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": null,
+        "condition": "Verificación ACSM 2026",
+        "action": "Involucrar todos los grupos musculares principales (empuje/tracción, superior/inferior)"
+      }
+    },
+    {
+      "id": "training.intensity.strength_heavy_load",
+      "category": "intensity",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "strength"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "load_pct_1rm",
+          "min": 80
+        }
+      ],
+      "finding": "La fuerza voluntaria se potencia mediante la elevación de cargas pesadas (>=80% 1RM, dosis-respuesta).",
+      "limitations": [
+        "No define una intensidad obligatoria en % 1RM para hipertrofia."
+      ],
+      "review_notes": [
+        "La fuente sí se pronuncia sobre hipertrofia: la carga (30-100% 1RM) no la afectó. Ver training.intensity.hypertrophy_load_any."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Intensity: Load → fuerza: impacta (6 revisiones, n=6.574, QoE 79%)",
+        "locator": "Abstract; Tabla 6 'Intensity: ≥80% 1RM (dose-response)'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_INTENSITY_STRENGTH",
+        "condition": "Objetivo_Ejercicio == 'Fuerza'",
+        "action": "Prescribir cargas >= 80% de 1RM"
+      }
+    },
+    {
+      "id": "training.intensity.hypertrophy_load_any",
+      "category": "intensity",
+      "kind": "no_consistent_effect",
+      "priority": "essential",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "hypertrophy"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "load_pct_1rm",
+          "min": 30,
+          "max": 100
+        }
+      ],
+      "finding": "La hipertrofia no se vio influida por usar cargas bajas (30% 1RM) o altas (100% 1RM).",
+      "limitations": [],
+      "review_notes": [
+        "Agregada en la verificación: resuelve la limitación 'no define intensidad para hipertrofia' de la investigación.",
+        "El número de repeticiones depende inversamente de la carga; con cargas bajas el esfuerzo debe seguir siendo suficiente (training.effort.sufficient_effort)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Intensity: Load → hipertrofia: no impacta (8 revisiones, n=5.340, QoE 66%)",
+        "locator": "Results 'Improving hypertrophy': 'low (30% 1RM) to high (100% 1RM) loads'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": null,
+        "condition": "Verificación ACSM 2026",
+        "action": "La carga no afecta la hipertrofia"
+      }
+    },
+    {
+      "id": "training.order.heavy_exercises_first",
+      "category": "exercise_order",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "exercise.load_pct_1rm",
+            "op": "gte",
+            "value": 80
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "exercise_position_in_session",
+          "value": "start"
+        }
+      ],
+      "finding": "La fuerza voluntaria se optimiza al realizar los ejercicios con cargas pesadas al principio de la sesión.",
+      "limitations": [
+        "Sujeto a la fatiga general del usuario y disponibilidad de tiempo."
+      ],
+      "review_notes": [
+        "El orden de ejercicios no afectó la hipertrofia: la regla aplica a objetivos de fuerza."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Exercise order → fuerza: impacta (4 revisiones, n=941, QoE 88%); hipertrofia: no impacta (4 revisiones, n=759, QoE 81%)",
+        "locator": "Abstract; Tabla 6 'Exercise order: Beginning of training session'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_ORDER_HEAVY_FIRST",
+        "condition": "Ejercicio_Tipo == 'Carga_Pesada_Fuerza'",
+        "action": "Colocar el ejercicio al inicio de la sesión de entrenamiento"
+      }
+    },
+    {
+      "id": "training.execution.full_range_of_motion",
+      "category": "execution",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "range_of_motion",
+          "value": "full"
+        }
+      ],
+      "finding": "La fuerza voluntaria se incrementa al entrenar a través de un rango completo de movimiento.",
+      "limitations": [
+        "Puede requerir ajustes individuales por movilidad o patologías articulares previas."
+      ],
+      "review_notes": [
+        "Para hipertrofia el efecto del rango de movimiento no se pudo determinar."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Technique: Range of motion → fuerza: impacta (2 revisiones, n=1.262, QoE 50%); hipertrofia: no determinable",
+        "locator": "Abstract; Tabla 6 'Technique: Full range of motion'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_EXECUTION_ROM",
+        "condition": "General",
+        "action": "Ejecutar ejercicios a rango completo de movimiento (Complete ROM)"
+      }
+    },
+    {
+      "id": "training.progression.progressive_overload",
+      "category": "progression",
+      "kind": "prescription",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "progressive_overload",
+          "value": "required"
+        }
+      ],
+      "finding": "Los adultos sanos deben realizar entrenamiento de fuerza progresivo para mejorar función y tamaño muscular.",
+      "limitations": [
+        "La periodización estructurada no mostró superioridad consistente sobre esquemas no periodizados."
+      ],
+      "review_notes": [
+        "La Discusión matiza: la progresión no es necesaria para obtener beneficios; aumentar el estímulo es probablemente un requisito solo para quien busca progreso continuo a largo plazo (el caso de esta app)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Conclusión del position stand; sin QoE propio",
+        "locator": "Abstract, Conclusions: 'Healthy adults should perform progressive RT'; Discussion (progressive overload)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_PROGRESSION_GENERAL",
+        "condition": "General",
+        "action": "Aplicar incremento progresivo en la exigencia del entrenamiento"
+      }
+    },
+    {
+      "id": "training.effort.failure_not_required",
+      "category": "effort",
+      "kind": "no_consistent_effect",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "train_to_failure",
+          "value": "not_required"
+        }
+      ],
+      "finding": "Entrenar hasta la fatiga muscular momentánea no mejoró de forma consistente la fuerza, la hipertrofia ni la potencia; no es necesario para obtener beneficios.",
+      "limitations": [
+        "Las fuentes no especifican valores de RIR (Repeticiones en Reserva)."
+      ],
+      "review_notes": [
+        "La limitación original es parcialmente inexacta: la fuente menciona 2-3 RIR como una forma de lograr esfuerzo suficiente, aunque dice que no hay evidencia para fijar metas exactas de RIR.",
+        "No requerir fallo no implica esfuerzo bajo: ver training.effort.sufficient_effort."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Intensity: Fatigue/failure → fuerza: no impacta (3 revisiones, n=1.371, QoE 83%); hipertrofia: no impacta (4 revisiones, n=800, QoE 69%)",
+        "locator": "Abstract; Discussion ('Completing sets to fatigue ... is not necessary for benefits to occur')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_FAILURE_OPTIONAL",
+        "condition": "General",
+        "action": "No requerir fallo muscular absoluto (Permitir finalizar la serie antes de la fatiga muscular momentánea)"
+      }
+    },
+    {
+      "id": "training.selection.equipment_any",
+      "category": "exercise_selection",
+      "kind": "no_consistent_effect",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "equipment_type",
+          "value": "any"
+        }
+      ],
+      "finding": "El tipo de equipamiento no influyó de forma consistente en las adaptaciones del entrenamiento.",
+      "limitations": [
+        "Ninguna en adultos sanos."
+      ],
+      "review_notes": [
+        "Evidencia de una sola revisión y solo para fuerza (máquinas vs peso libre); para hipertrofia no se pudo determinar."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Type: Machine vs free-weight → fuerza: no impacta (1 revisión, n=683, QoE 75%); hipertrofia: no determinable",
+        "locator": "Abstract ('equipment type ... did not consistently impact training outcomes')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_EQUIPMENT_FLEXIBLE",
+        "condition": "General",
+        "action": "Permitir uso indiferente de pesos libres, máquinas o poleas según disponibilidad"
+      }
+    },
+    {
+      "id": "training.selection.complexity_any",
+      "category": "exercise_selection",
+      "kind": "no_consistent_effect",
+      "priority": "essential",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "exercise_complexity",
+          "value": "any"
+        }
+      ],
+      "finding": "La complejidad del ejercicio no alteró de forma consistente los resultados.",
+      "limitations": [
+        "Ninguna en adaptaciones generales de masa y fuerza."
+      ],
+      "review_notes": [
+        "El Abstract lo lista como 'no impactó consistentemente', pero la Tabla 4 (monoarticular vs multiarticular) indica 'no se puede determinar' para fuerza (sin datos) e hipertrofia. Es ausencia de diferencia demostrada, no evidencia de equivalencia."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Type: Single-joint vs multi-joint → fuerza: sin datos; hipertrofia: no determinable (2 revisiones, QoE 25% y 100%)",
+        "locator": "Abstract ('exercise complexity ... did not consistently impact training outcomes')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_COMPLEXITY_FLEXIBLE",
+        "condition": "General",
+        "action": "Incluir libremente ejercicios multiarticulares o monoarticulares"
+      }
+    },
+    {
+      "id": "training.hypertrophy.eccentric_overload",
+      "category": "technique",
+      "kind": "option",
+      "priority": "useful",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "hypertrophy"
+          },
+          {
+            "fact": "advanced_techniques_enabled",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "eccentric_overload",
+          "value": "enabled"
+        }
+      ],
+      "finding": "La hipertrofia muscular se ve potenciada por la sobrecarga excéntrica (contracciones solo excéntricas vs solo concéntricas).",
+      "limitations": [
+        "Requiere equipamiento o asistencia especializada."
+      ],
+      "review_notes": [
+        "Se apoya en una sola revisión que compara contracciones solo excéntricas vs solo concéntricas; no en añadir sobrecarga excéntrica a series tradicionales."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Technique: Contraction type → hipertrofia: impacta (1 revisión, n=868, QoE 75%)",
+        "locator": "Abstract; Tabla 6 'Type: Eccentric contractions/overload'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_ECCENTRIC_OVERLOAD",
+        "condition": "Modulo_Hipertrofia_Avanzada == True",
+        "action": "Incorporar técnicas de sobrecarga excéntrica"
+      }
+    },
+    {
+      "id": "training.power.moderate_load_fast_concentric",
+      "category": "power",
+      "kind": "prescription",
+      "priority": "useful",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "power"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "load_pct_1rm",
+          "min": 30,
+          "max": 70
+        },
+        {
+          "variable": "concentric_velocity",
+          "value": "fast"
+        }
+      ],
+      "finding": "La potencia se optimiza con cargas moderadas (30%-70% 1RM) y velocidad concéntrica rápida.",
+      "limitations": [
+        "Objetivo secundario para recomposición corporal pura."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4 → potencia: Load impacta (2 revisiones, n=1.980, QoE 75%); Power training impacta (2 revisiones, n=863, QoE 75%)",
+        "locator": "Abstract; Tabla 6 'Intensity: Loads = 30%–70% 1RM'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_POWER_INTENSITY",
+        "condition": "Objetivo_Ejercicio == 'Potencia'",
+        "action": "Prescribir cargas entre 30% y 70% de 1RM con fase concéntrica rápida"
+      }
+    },
+    {
+      "id": "training.power.low_moderate_volume",
+      "category": "power",
+      "kind": "prescription",
+      "priority": "useful",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "target_adaptation",
+            "op": "eq",
+            "value": "power"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "total_reps_per_exercise",
+          "max": 24
+        }
+      ],
+      "finding": "La potencia responde mejor a volúmenes bajos a moderados (repeticiones x series <=24).",
+      "limitations": [
+        "Solo aplicable cuando el objetivo explícito es potencia física."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Volume: Sets → potencia: impacta (1 revisión, n=454, QoE 75%)",
+        "locator": "Abstract; Tabla 6 'Volume: Low-moderate (repetitions ⋅ sets ≤24)'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_POWER_VOLUME",
+        "condition": "Objetivo_Ejercicio == 'Potencia'",
+        "action": "Mantener repeticiones totales por combinación <= 24 reps*series"
+      }
+    },
+    {
+      "id": "training.structure.set_structure_any",
+      "category": "set_structure",
+      "kind": "no_consistent_effect",
+      "priority": "useful",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "set_structure",
+          "value": "any"
+        }
+      ],
+      "finding": "La estructura de las series (sets convencionales vs. cluster, complex, etc.) no tuvo impacto consistente en los resultados.",
+      "limitations": [],
+      "review_notes": [
+        "Para hipertrofia el efecto no se pudo determinar."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Set structure → fuerza: no impacta (3 revisiones, n=1.837, QoE 83%); hipertrofia: no determinable; potencia: no impacta",
+        "locator": "Abstract",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": null,
+        "condition": "evidence.md: variables sin impacto consistente",
+        "action": "Estructura de las series (sets convencionales vs. alternativas)"
+      }
+    },
+    {
+      "id": "training.execution.time_under_tension_any",
+      "category": "execution",
+      "kind": "no_consistent_effect",
+      "priority": "useful",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "time_under_tension",
+          "value": "any"
+        }
+      ],
+      "finding": "El tiempo bajo tensión no tuvo impacto consistente: repeticiones rápidas (0,5 s) o lentas (8 s) no influyeron en la hipertrofia, ni rápidas (<2 s) vs moderadas-lentas (>2 s) en la fuerza.",
+      "limitations": [],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Time-under-tension → fuerza: no impacta (QoE 75%); hipertrofia: no impacta (3 revisiones, n=806, QoE 58%)",
+        "locator": "Abstract; Results 'Improving strength' / 'Improving hypertrophy'",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": null,
+        "condition": "evidence.md: variables sin impacto consistente",
+        "action": "Tiempo bajo tensión (TUT)"
+      }
+    },
+    {
+      "id": "training.technique.blood_flow_restriction_any",
+      "category": "technique",
+      "kind": "no_consistent_effect",
+      "priority": "useful",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "blood_flow_restriction",
+          "value": "any"
+        }
+      ],
+      "finding": "La restricción del flujo sanguíneo (BFR) no tuvo impacto consistente en los resultados.",
+      "limitations": [],
+      "review_notes": [
+        "Solo demostrado para hipertrofia; para fuerza no se pudo determinar. Además la fuente advierte que muchos protocolos BFR confunden su efecto con el de la carga."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Type: Blood flow restriction → fuerza: no determinable; hipertrofia: no impacta (2 revisiones, n=587, QoE 75%)",
+        "locator": "Abstract; Discussion (BFR)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": null,
+        "condition": "evidence.md: variables sin impacto consistente",
+        "action": "Restricción del flujo sanguíneo (BFR)"
+      }
+    },
+    {
+      "id": "training.progression.periodization_model_any",
+      "category": "progression",
+      "kind": "no_consistent_effect",
+      "priority": "useful",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "periodization_model",
+          "value": "any"
+        }
+      ],
+      "finding": "La periodización (lineal, ondulante o no periodizada) no influyó en la hipertrofia; con sobrecarga progresiva adecuada no es significativamente superior a programas no periodizados.",
+      "limitations": [],
+      "review_notes": [
+        "Para fuerza el impacto no se pudo determinar (una revisión favoreció ligeramente la periodización con volumen igualado)."
+      ],
+      "evidence": {
+        "source_id": "ACSM_2026_RT",
+        "quality": "not_stated",
+        "source_grade": "Tabla 4, Progression: Periodization → fuerza: no determinable; hipertrofia: no impacta (4 revisiones, n=1.414, QoE 63%)",
+        "locator": "Abstract; Discussion (variation / periodization)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": null,
+        "condition": "evidence.md: variables sin impacto consistente",
+        "action": "Modelos de periodización (ondulante vs. lineal)"
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap.rest_between_sets",
+      "variable": "rest_between_sets",
+      "status": "not_restrictive",
+      "note": "Verificado: descansos cortos (<1 min) vs largos (>1 min) no afectaron la fuerza (2 revisiones, n=982, QoE 63%). Para hipertrofia no se pudo determinar (4 revisiones, QoE 44%). La investigación original lo marcaba como no determinado.",
+      "app_impact": "El descanso de 120 s de LiveWorkoutView no contradice la evidencia de fuerza, pero es un valor de UI: la fuente no fija un descanso para hipertrofia.",
+      "source_id": "ACSM_2026_RT",
+      "app_default": "design.ui_training_defaults"
+    },
+    {
+      "id": "gap.rep_ranges",
+      "variable": "reps_per_set",
+      "status": "not_restrictive",
+      "note": "No se impone una zona de repeticiones. Para hipertrofia la carga (30-100% 1RM) no tuvo impacto; para fuerza importan cargas >=80% 1RM, lo que implica pocas repeticiones por serie. Las repeticiones dependen inversamente de la carga.",
+      "app_impact": "El motor no debe imponer 8-12 reps como evidencia; debe derivar reps de la carga y del objetivo.",
+      "source_id": "ACSM_2026_RT"
+    },
+    {
+      "id": "gap.rir_targets",
+      "variable": "reps_in_reserve",
+      "status": "not_determined",
+      "note": "La fuente menciona 'cerca del fallo' o 2-3 RIR como formas de lograr esfuerzo suficiente, pero declara que no hay evidencia suficiente para cuantificar metas exactas de RIR o esfuerzo percibido.",
+      "app_impact": "La UI muestra 'Óptimo: RIR 1-2': no está respaldado. Lo más cercano en la fuente es 2-3 RIR como ejemplo, no como óptimo.",
+      "source_id": "ACSM_2026_RT",
+      "app_default": "design.ui_training_defaults"
+    },
+    {
+      "id": "gap.caloric_deficit_adjustment",
+      "variable": "training_adjustment_in_deficit",
+      "status": "not_determined",
+      "note": "Verificado: el ACSM 2026 no menciona déficit calórico, dieta ni pérdida de peso en ningún punto del texto.",
+      "app_impact": "Ajustes de entrenamiento en déficit calórico (recomposición) no tienen respaldo en esta base.",
+      "source_id": "ACSM_2026_RT",
+      "design_decision": "design.supported_goal"
+    },
+    {
+      "id": "gap.experience_stratification",
+      "variable": "training_experience",
+      "status": "not_restrictive",
+      "note": "Verificado: en un análisis previo de los autores la experiencia tuvo un impacto mínimo en fuerza e hipertrofia, y las recomendaciones aplican de novatos a entrenados. Salvedad: gran parte de la evidencia proviene de personas sin experiencia, y los autores recomiendan individualizar.",
+      "app_impact": "Las reglas no necesitan variantes por nivel. La individualización (p.ej. cargas bajas iniciales en novatos) es decisión de diseño.",
+      "source_id": "ACSM_2026_RT",
+      "design_decision": "design.training_experience"
+    },
+    {
+      "id": "gap.goal_to_adaptation_mapping",
+      "variable": "target_adaptation",
+      "status": "not_determined",
+      "note": "Las reglas se expresan por adaptación (fuerza/hipertrofia/potencia). Cómo se traduce el objetivo 'recomposición' a esas adaptaciones es una decisión de diseño que ninguna fuente de esta base define.",
+      "app_impact": "El Decision Engine necesitará una regla explícita (y documentada como decisión de diseño, no evidencia) para este mapeo.",
+      "source_id": null,
+      "design_decision": "design.supported_goal"
+    }
+  ]
+}

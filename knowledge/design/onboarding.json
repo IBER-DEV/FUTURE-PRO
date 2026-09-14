@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "onboarding_version": "1.0.0",
+  "title": "Datos y preferencias del usuario (nivel 1)",
+  "notes": [
+    "Solo se preguntan datos que el usuario conoce y preferencias que le corresponden. Umbrales, fórmulas y matriz de evaluación NO se preguntan (design/parameters.json).",
+    "Los defaults son las opciones recomendadas; cada usuario puede elegir otra.",
+    "feeds: facts de knowledge/*/rules.json o decisiones de design/parameters.json que usan este dato."
+  ],
+  "steps": [
+    {
+      "id": "profile",
+      "title": "Tu perfil",
+      "fields": [
+        { "id": "sex", "label": "Sexo biológico", "type": "enum", "required": true, "options": [{ "value": "male", "label": "Hombre" }, { "value": "female", "label": "Mujer" }], "why": "Las fórmulas de grasa corporal y gasto energético difieren por sexo.", "feeds": ["design.body_composition", "design.energy_expenditure"] },
+        { "id": "age_years", "label": "Edad", "type": "number", "unit": "años", "min": 18, "max": 90, "required": true, "why": "Las fuentes aplican a adultos (>=18) y la edad entra en el cálculo de gasto.", "feeds": ["design.energy_expenditure"] },
+        { "id": "height_cm", "label": "Altura", "type": "number", "unit": "cm", "min": 130, "max": 230, "required": true, "why": "Grasa corporal y gasto energético.", "feeds": ["design.body_composition", "design.energy_expenditure"] },
+        { "id": "weight_kg", "label": "Peso actual", "type": "number", "unit": "kg", "min": 35, "max": 250, "required": true, "why": "Punto de partida para ritmo, calorías y proteína.", "feeds": ["design.pace_and_deficit", "design.protein_target", "design.energy_expenditure"] }
+      ]
+    },
+    {
+      "id": "measurements",
+      "title": "Medidas con cinta",
+      "fields": [
+        { "id": "waist_cm", "label": "Cintura", "type": "number", "unit": "cm", "min": 40, "max": 200, "required": true, "why": "Grasa corporal (Navy) y seguimiento semanal.", "feeds": ["design.body_composition", "design.trends"] },
+        { "id": "neck_cm", "label": "Cuello", "type": "number", "unit": "cm", "min": 20, "max": 70, "required": true, "why": "Método Navy.", "feeds": ["design.body_composition"] },
+        { "id": "hip_cm", "label": "Cadera", "type": "number", "unit": "cm", "min": 50, "max": 200, "required_when": { "field": "sex", "equals": "female" }, "why": "El método Navy para mujeres incluye la cadera.", "feeds": ["design.body_composition"] },
+        { "id": "body_fat_override_pct", "label": "¿Tienes un % de grasa medido (DEXA u otro)?", "type": "number", "unit": "%", "min": 3, "max": 60, "required": false, "why": "Si existe, reemplaza la estimación Navy.", "feeds": ["design.body_composition"] }
+      ]
+    },
+    {
+      "id": "training",
+      "title": "Tu entrenamiento",
+      "fields": [
+        { "id": "training_experience", "label": "¿Cuánto tiempo llevas entrenando fuerza de forma constante?", "type": "enum", "required": true, "options": [{ "value": "none", "label": "Nunca / casi nunca" }, { "value": "under_1_year", "label": "Menos de 1 año" }, { "value": "1_to_3_years", "label": "1 a 3 años" }, { "value": "over_3_years", "label": "Más de 3 años" }], "why": "Define resistance_trained y training_level.", "feeds": ["design.training_experience"] },
+        { "id": "days_per_week", "label": "Días por semana que puedes entrenar", "type": "number", "min": 2, "max": 6, "default": 4, "required": true, "why": "Mínimo 2 sesiones/semana (ACSM).", "feeds": ["training.frequency.min_weekly_sessions"] },
+        { "id": "session_minutes", "label": "Minutos por sesión", "type": "enum", "required": true, "default": "60", "options": [{ "value": "30", "label": "30 min" }, { "value": "45", "label": "45 min" }, { "value": "60", "label": "60 min" }, { "value": "90", "label": "90 min" }], "why": "Limita cuántas series caben por sesión.", "feeds": [] },
+        { "id": "equipment_access", "label": "¿Dónde entrenas?", "type": "enum", "required": true, "default": "gym", "options": [{ "value": "gym", "label": "Gimnasio completo" }, { "value": "minimal", "label": "Casa con mancuernas/bandas" }, { "value": "none", "label": "Solo peso corporal" }], "why": "Filtra ejercicios por equipment_access de la Exercise KB.", "feeds": ["training.selection.equipment_any"] },
+        { "id": "daily_activity", "label": "Actividad fuera del gimnasio", "type": "enum", "required": true, "default": "lightly_active", "options": [{ "value": "sedentary", "label": "Sedentaria (oficina, poco caminar)" }, { "value": "lightly_active", "label": "Ligera (caminas algo a diario)" }, { "value": "moderately_active", "label": "Moderada (de pie gran parte del día)" }, { "value": "very_active", "label": "Alta (trabajo físico)" }], "why": "Factor de actividad para el gasto inicial; se recalibra con datos reales.", "feeds": ["design.energy_expenditure"] },
+        { "id": "endurance_or_high_intensity_sport", "label": "¿Practicas además un deporte de resistencia o alta intensidad?", "type": "boolean", "required": true, "default": false, "why": "Activa la alerta de carbohidratos muy bajos.", "feeds": ["nutrition.safety.low_carb_endurance_performance"] }
+      ]
+    },
+    {
+      "id": "tracking",
+      "title": "Qué vas a registrar",
+      "fields": [
+        { "id": "weigh_in_frequency", "label": "¿Cada cuánto te vas a pesar?", "type": "enum", "required": true, "default": "daily", "options": [{ "value": "daily", "label": "A diario (recomendado)" }, { "value": "three_per_week", "label": "3 veces por semana" }, { "value": "weekly", "label": "1 vez por semana" }], "why": "Define cuántas semanas hacen falta para detectar tendencia (2, 3 o 4).", "feeds": ["design.trends"] },
+        { "id": "food_logging", "label": "¿Qué vas a registrar de tu alimentación?", "type": "enum", "required": true, "default": "calories_and_protein", "options": [{ "value": "calories_and_protein", "label": "Calorías y proteína (recomendado)" }, { "value": "protein_only", "label": "Solo proteína" }, { "value": "none", "label": "Nada por ahora" }], "why": "Sin calorías no se recalibra el gasto ni se audita un estancamiento; sin proteína no se evalúa la conservación muscular.", "feeds": ["design.energy_expenditure", "design.protein_target"] }
+      ]
+    },
+    {
+      "id": "goal",
+      "title": "Tu ritmo",
+      "fields": [
+        { "id": "goal", "label": "Objetivo", "type": "enum", "required": true, "default": "recomposition", "options": [{ "value": "recomposition", "label": "Perder grasa manteniendo o ganando músculo" }], "why": "Único objetivo soportado en v1.", "feeds": ["design.supported_goal"] },
+        { "id": "pace", "label": "¿A qué ritmo quieres perder peso?", "type": "enum", "required": true, "default": "moderate", "options": [{ "value": "conservative", "label": "Conservador (~0,5% del peso por semana)" }, { "value": "moderate", "label": "Moderado (~0,75% por semana)" }, { "value": "fast", "label": "Rápido (~1% por semana; hasta 1,25% si tu grasa es alta)" }], "why": "El motor lo acota según tu grasa corporal estimada.", "feeds": ["design.pace_and_deficit"] }
+      ]
+    }
+  ]
+}

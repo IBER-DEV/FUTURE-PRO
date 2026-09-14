@@ -1,0 +1,852 @@
+{
+  "schema_version": "1.1.0",
+  "knowledge_version": "1.1.0",
+  "domain": "nutrition",
+  "title": "Nutrition Knowledge Base v1",
+  "derived_from": "knowledge/nutrition/research/Nutrition_Knowledge_Base.json; verificado contra el texto completo del ISSN 2017 (PMC5470183) el 2026-09-14",
+  "target_population": "Adultos físicamente activos (según ISSN 2017)",
+  "verification_notes": [
+    "evidence.quality = 'not_stated': el ISSN 2017 no califica la calidad de evidencia de sus conclusiones. Las etiquetas 'Alta'/'Moderada' de la investigación original no provienen de la fuente.",
+    "Eliminadas por no ser recomendaciones de la fuente: RULE_002 (obesidad, 1.0-2.5 kg/semana: es el objetivo descriptivo de las dietas de muy bajas calorías), RULE_010 grasa 20-35% (es la definición de dieta baja en grasa según el AMDR, sobre la energía total, no del TDEE) y carbohidratos 'calorías restantes' (método de cálculo que no aparece en la fuente).",
+    "Corregidas: RULE_003 (1.4-2.0 g/kg no está restringido a mantenimiento/superávit), RULE_004 ('lean', no grasa moderada), RULE_005 (sin 0.25-0.40 g/kg por comida; es en condiciones hipocalóricas), RULE_006 (sin 300-500 / 100-300 kcal: la fuente es cualitativa), RULE_007 (la adaptación se evitó con fuerza + proteína adecuada)."
+  ],
+  "facts": {
+    "goal": {
+      "type": "enum",
+      "values": [
+        "fat_loss"
+      ],
+      "description": "Objetivo declarado del usuario. La investigación solo usa PERDIDA_GRASA."
+    },
+    "energy_phase": {
+      "type": "enum",
+      "values": [
+        "deficit",
+        "maintenance",
+        "surplus"
+      ],
+      "description": "Fase energética vigente del plan (fase_nutricional: DEFICIT / EUCALORICA / SUPERAVIT)."
+    },
+    "body_fat_category": {
+      "type": "enum",
+      "values": [
+        "low",
+        "moderate",
+        "high_or_obese"
+      ],
+      "description": "Categoría de grasa corporal (BAJO / MODERADO / ALTO_O_OBESIDAD). Los umbrales no están definidos: ver gap.body_fat_classification."
+    },
+    "is_athlete_or_lean": {
+      "type": "boolean",
+      "description": "El usuario es atleta o una persona delgada/entrenada (perfil ATLETA_O_DELGADO / 'Magro/Entrenado')."
+    },
+    "activity_level": {
+      "type": "enum",
+      "values": [
+        "active_or_athlete"
+      ],
+      "description": "Nivel de actividad (ACTIVO_O_DEPORTISTA)."
+    },
+    "resistance_trained": {
+      "type": "boolean",
+      "description": "El usuario tiene experiencia en entrenamiento de fuerza (entrenado_fuerza)."
+    },
+    "does_resistance_training": {
+      "type": "boolean",
+      "description": "El plan actual incluye entrenamiento de fuerza (entrenamiento_fuerza)."
+    },
+    "training_level": {
+      "type": "enum",
+      "values": [
+        "beginner_untrained",
+        "advanced_athlete"
+      ],
+      "description": "Nivel de entrenamiento (PRINCIPIANTE_NO_ENTRENADO / AVANZADO_ATLETA). No hay nivel intermedio: ver gap.training_level_intermediate."
+    },
+    "cumulative_weight_loss_pct": {
+      "type": "number",
+      "min": 0,
+      "max": 100,
+      "description": "Pérdida de peso acumulada y mantenida desde el inicio, en % del peso inicial."
+    },
+    "weeks_without_weight_change": {
+      "type": "number",
+      "min": 0,
+      "description": "Semanas consecutivas sin cambio de peso."
+    },
+    "theoretical_deficit_met": {
+      "type": "boolean",
+      "description": "Según lo registrado, el usuario cumplió el déficit teórico."
+    },
+    "protein_g_per_kg": {
+      "type": "number",
+      "min": 0,
+      "description": "Ingesta real de proteína en g por kg de peso corporal total por día."
+    },
+    "weekly_weight_loss_pct": {
+      "type": "number",
+      "description": "Pérdida de peso semanal en % del peso corporal (positivo = pérdida)."
+    },
+    "endurance_or_high_intensity_sport": {
+      "type": "boolean",
+      "description": "El usuario practica deporte de resistencia o de alta intensidad con alta demanda de carbohidratos."
+    },
+    "carbs_g_per_day": {
+      "type": "number",
+      "min": 0,
+      "description": "Ingesta de carbohidratos en g por día."
+    }
+  },
+  "variables": {
+    "energy_intake": {
+      "values": [
+        "below_tdee"
+      ]
+    },
+    "deficit_distribution": {
+      "values": [
+        "linear_daily_or_intermittent_weekly"
+      ]
+    },
+    "weekly_weight_loss_pct": {
+      "unit": "% peso corporal/semana"
+    },
+    "protein_g_per_kg_bw": {
+      "unit": "g/kg peso total/día"
+    },
+    "protein_g_per_kg_ffm": {
+      "unit": "g/kg masa libre de grasa/día"
+    },
+    "meals_per_day": {
+      "unit": "comidas/día"
+    },
+    "protein_share_per_meal_pct": {
+      "unit": "% de proteína por comida (la fuente no aclara si es % de kcal)"
+    },
+    "energy_surplus_size": {
+      "values": [
+        "larger",
+        "smaller"
+      ]
+    },
+    "tdee_adjustment_factor": {
+      "unit": "multiplicador del TDEE predicho a partir de la composición corporal actual"
+    },
+    "macronutrient_distribution": {
+      "values": [
+        "any"
+      ]
+    },
+    "fat_source_priority": {
+      "values": [
+        "pufa_over_sfa"
+      ]
+    }
+  },
+  "signals": {
+    "food_logging_audit_required": {
+      "type": "boolean",
+      "description": "Se debe verificar el pesaje de alimentos y el registro de actividad antes de cambiar el plan."
+    },
+    "calorie_reduction_allowed": {
+      "type": "boolean",
+      "description": "El motor puede reducir calorías en este momento."
+    },
+    "lean_mass_loss_risk": {
+      "type": "enum",
+      "values": [
+        "high"
+      ],
+      "description": "Nivel de riesgo de pérdida de masa magra."
+    },
+    "performance_risk_low_carb": {
+      "type": "boolean",
+      "description": "Riesgo de rendimiento por restricción de carbohidratos en deportes de resistencia o alta intensidad."
+    }
+  },
+  "rules": [
+    {
+      "id": "nutrition.energy.fat_loss_deficit",
+      "category": "energy_balance",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "goal",
+            "op": "eq",
+            "value": "fat_loss"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "energy_intake",
+          "value": "below_tdee"
+        },
+        {
+          "variable": "deficit_distribution",
+          "value": "linear_daily_or_intermittent_weekly"
+        }
+      ],
+      "finding": "Las dietas enfocadas en pérdida de grasa operan bajo el mecanismo fundamental de un déficit calórico sostenido, que puede imponerse de forma lineal/diaria o no lineal a lo largo de la semana. La restricción intermitente no mostró ventaja significativa sobre la diaria; la elección debe basarse en preferencia, tolerancia y objetivos deportivos.",
+      "limitations": [
+        "El déficit calórico por sí solo induce termogénesis adaptativa y reduce la síntesis proteica si no se acompaña de entrenamiento de fuerza y alta proteína."
+      ],
+      "review_notes": [
+        "La fuente no cuantifica el tamaño del déficit: ver gap.deficit_magnitude."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Position Statement 3 y 7; Conclusions and recommendations ('programming of linear versus nonlinear caloric deficits should be determined by individual preference, tolerance, and athletic goals')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_001",
+        "condition": "objetivo == PERDIDA_GRASA",
+        "action": "TDEE - margen_deficit; distribución LINEAL_DIARIO o INTERMITENTE_SEMANAL"
+      }
+    },
+    {
+      "id": "nutrition.rate.lean_or_athlete",
+      "category": "weight_loss_rate",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "is_athlete_or_lean",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "body_fat_category",
+            "op": "eq",
+            "value": "low"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "weekly_weight_loss_pct",
+          "min": 0.5,
+          "max": 1
+        }
+      ],
+      "finding": "A medida que las personas son más magras, tasas de pérdida más lentas preservan mejor la masa magra (0,7% del peso semanal superó a 1,4%). Helms et al. sugirieron 0,5-1,0% del peso por semana para culturistas en preparación de competición.",
+      "limitations": [],
+      "review_notes": [
+        "El rango 0,5-1,0% viene de culturistas en preparación; aplicarlo a cualquier persona magra es una extrapolación razonable pero no probada."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Conclusions and recommendations (Garthe et al.; Helms et al.)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_002",
+        "condition": "perfil == ATLETA_O_DELGADO AND body_fat == BAJO",
+        "action": "tasa semanal 0.5-1.0 % peso corporal"
+      }
+    },
+    {
+      "id": "nutrition.protein.athletic_baseline",
+      "category": "protein",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "activity_level",
+            "op": "eq",
+            "value": "active_or_athlete"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "protein_g_per_kg_bw",
+          "min": 1.4,
+          "max": 2
+        }
+      ],
+      "finding": "La posición del ISSN de 2007 sobre proteína (1,4-2,0 g/kg) ha recibido más apoyo de investigaciones posteriores con requerimientos similares en poblaciones deportivas.",
+      "limitations": [
+        "Durante déficits calóricos en sujetos delgados, este rango resulta insuficiente para preservar óptimamente la masa magra."
+      ],
+      "review_notes": [
+        "Corregida: la fuente no restringe este rango a mantenimiento/superávit (la investigación original sí). Aplica también en déficit como base; en personas magras y entrenadas en déficit puede requerirse más (nutrition.protein.deficit_lean_trained_ffm).",
+        "Resuelve conflict.protein_in_deficit: el rango 1,6-2,4 g/kg no es una recomendación del ISSN; son dosis de estudios individuales citados (1,6 g/kg Lemon; 2,4 g/kg Pasiakos y Longland)."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Conclusions and recommendations ('The ISSN's original 2007 position stand on protein intake (1.4–2.0 g/kg)...')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_003",
+        "condition": "fase_nutricional in [EUCALORICA, SUPERAVIT] AND nivel_actividad == ACTIVO_O_DEPORTISTA",
+        "action": "proteína 1.4-2.0 g/kg peso total"
+      }
+    },
+    {
+      "id": "nutrition.protein.deficit_lean_trained_ffm",
+      "category": "protein",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "energy_phase",
+            "op": "eq",
+            "value": "deficit"
+          },
+          {
+            "fact": "resistance_trained",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "is_athlete_or_lean",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "protein_g_per_kg_ffm",
+          "min": 2.3,
+          "max": 3.1
+        }
+      ],
+      "finding": "Ingestas más altas (2,3-3,1 g/kg de masa libre de grasa) pueden ser necesarias para maximizar la retención muscular en sujetos magros y entrenados en fuerza en condiciones hipocalóricas (revisión sistemática de Helms et al.).",
+      "limitations": [
+        "Requiere una estimación confiable de la FFM/Masa Libre de Grasa; errores en la medición del % de grasa desajustarán la prescripción."
+      ],
+      "review_notes": [
+        "Corregida: la fuente dice 'lean' (magros); la investigación original lo extendía a grasa corporal moderada.",
+        "La fuente dice 'may be required' (pueden ser necesarias), no 'son requeridas'.",
+        "La app no tiene hoy un método para estimar FFM: ver gap.ffm_estimation."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Position Statement 6; sección High-protein diets (Helms et al. [88])",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_004",
+        "condition": "fase_nutricional == DEFICIT AND entrenado_fuerza AND body_fat == BAJO_O_MODERADO",
+        "action": "proteína 2.3-3.1 g/kg FFM"
+      }
+    },
+    {
+      "id": "nutrition.protein.pacing_in_deficit",
+      "category": "protein_distribution",
+      "kind": "option",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "energy_phase",
+            "op": "eq",
+            "value": "deficit"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "meals_per_day",
+          "min": 4,
+          "max": 6
+        },
+        {
+          "variable": "protein_share_per_meal_pct",
+          "min": 30
+        },
+        {
+          "variable": "protein_g_per_kg_bw",
+          "min": 1.4
+        }
+      ],
+      "finding": "El 'protein-pacing' (4-6 comidas/día, >30% de proteína por comida, resultando en >1,4 g/kg/día) demostró superioridad sobre dietas convencionales con menos proteína y menor frecuencia para mejorar la composición corporal en condiciones hipocalóricas.",
+      "limitations": [
+        "Escasa evidencia comparativa directa de diferentes frecuencias intra-día en atletas de élite en superávit."
+      ],
+      "review_notes": [
+        "Corregida: se eliminó '0,25-0,40 g/kg por comida', que no aparece en la fuente, y se acotó a déficit.",
+        "Proviene del trabajo de Arciero et al. (también coautor del position stand).",
+        "La fuente considera la distribución intra-día secundaria frente al total diario ('la torta es el total, la distribución es el glaseado')."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Sección High-protein diets (Arciero et al. [81, 82])",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_005",
+        "condition": "General",
+        "action": "4-6 comidas; >30% kcal proteína por comida o 0.25-0.40 g/kg por comida"
+      }
+    },
+    {
+      "id": "nutrition.energy.surplus_beginner",
+      "category": "energy_balance",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "energy_phase",
+            "op": "eq",
+            "value": "surplus"
+          },
+          {
+            "fact": "training_level",
+            "op": "eq",
+            "value": "beginner_untrained"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "energy_surplus_size",
+          "value": "larger"
+        }
+      ],
+      "finding": "Superávits calóricos más grandes son más apropiados para sujetos no entrenados, preparados para progresos más marcados en masa magra, y para quienes tienen un NEAT alto.",
+      "limitations": [
+        "El NEAT inconsciente puede incrementarse drásticamente ante un sobreconsumo calórico (hasta 692 kcal/día), anulando el superávit planificado."
+      ],
+      "review_notes": [
+        "Corregida: el rango 300-500 kcal de la investigación no aparece en la fuente, que es solo cualitativa: ver gap.surplus_magnitude.",
+        "La fuente advierte que no todos encajan: algunos novatos requieren superávits menores."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Conclusions and recommendations ('Larger caloric surpluses are more appropriate for untrained subjects...')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_006",
+        "condition": "nivel_entrenamiento == PRINCIPIANTE_NO_ENTRENADO",
+        "action": "superávit 300-500 kcal"
+      }
+    },
+    {
+      "id": "nutrition.energy.surplus_advanced",
+      "category": "energy_balance",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "energy_phase",
+            "op": "eq",
+            "value": "surplus"
+          },
+          {
+            "fact": "training_level",
+            "op": "eq",
+            "value": "advanced_athlete"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "energy_surplus_size",
+          "value": "smaller"
+        }
+      ],
+      "finding": "Superávits calóricos más pequeños son apropiados para personas más avanzadas, que pueden tener mayor riesgo de ganar grasa indebida en condiciones hipercalóricas agresivas.",
+      "limitations": [
+        "El NEAT inconsciente puede incrementarse drásticamente ante un sobreconsumo calórico (hasta 692 kcal/día), anulando el superávit planificado."
+      ],
+      "review_notes": [
+        "Corregida: el rango 100-300 kcal de la investigación no aparece en la fuente, que es solo cualitativa: ver gap.surplus_magnitude.",
+        "La fuente advierte que algunos avanzados requieren superávits mayores para seguir progresando."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Conclusions and recommendations ('smaller caloric surpluses are appropriate for more advanced trainees...')",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_006",
+        "condition": "nivel_entrenamiento == AVANZADO_ATLETA",
+        "action": "superávit 100-300 kcal"
+      }
+    },
+    {
+      "id": "nutrition.energy.adaptive_tdee_correction",
+      "category": "metabolic_adaptation",
+      "kind": "prescription",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "cumulative_weight_loss_pct",
+            "op": "gte",
+            "value": 10
+          },
+          {
+            "any": [
+              {
+                "fact": "does_resistance_training",
+                "op": "eq",
+                "value": false
+              },
+              {
+                "fact": "protein_g_per_kg",
+                "op": "lt",
+                "value": 1.4
+              }
+            ]
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "tdee_adjustment_factor",
+          "min": 0.85,
+          "max": 0.9
+        }
+      ],
+      "finding": "Mantener una pérdida >=10% del peso produce una caída de ~20-25% del TDEE; la termogénesis adaptativa es la parte que excede lo predicho por la pérdida de masa magra y grasa (10-15%), en su mayoría por menor gasto no basal. La mayor parte de esa evidencia involucró restricción agresiva, proteína baja y ausencia de entrenamiento de fuerza; los estudios que incluyeron fuerza y proteína adecuada evitaron el problema.",
+      "limitations": [
+        "La respuesta de termogénesis adaptativa presenta una elevada variabilidad interindividual."
+      ],
+      "review_notes": [
+        "Corregida: se agregó la condición 'sin fuerza o proteína baja', porque la fuente indica que con fuerza y proteína adecuada la adaptación se evitó.",
+        "'Proteína adecuada' no está cuantificada en ese pasaje; se usa el mínimo de la recomendación del ISSN (1,4 g/kg) como umbral. Es una interpretación.",
+        "El factor aplica sobre un TDEE ya predicho con la composición corporal actual, no sobre el TDEE inicial."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Sección Adaptations to underfeeding; Conclusions and recommendations (adaptive thermogenesis)",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_007",
+        "condition": "perdida_peso_acumulada_pct >= 10",
+        "action": "factor_correccion_tdee 0.85-0.90"
+      }
+    },
+    {
+      "id": "nutrition.monitoring.plateau_audit_before_cut",
+      "category": "adherence",
+      "kind": "decision",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "weeks_without_weight_change",
+            "op": "gte",
+            "value": 2
+          },
+          {
+            "fact": "theoretical_deficit_met",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "food_logging_audit_required",
+          "value": true
+        },
+        {
+          "signal": "calorie_reduction_allowed",
+          "value": false
+        }
+      ],
+      "message": "Verificar precisión en el pesaje de comidas y registro de actividad física antes de modificar el plan calórico.",
+      "finding": "El mal registro de ingesta y gasto es común y puede confundirse con adaptación metabólica. En personas con obesidad e historial de 'resistencia a la dieta' que decían comer <1200 kcal/día, la ingesta real se subreportó en un 47% (1053 kcal/día) y la actividad se sobreestimó en un 51% (251 kcal/día).",
+      "limitations": [
+        "Depende de la disposición del usuario para realizar un seguimiento riguroso del pesaje de alimentos."
+      ],
+      "review_notes": [
+        "El umbral de 2 semanas no aparece en la fuente: es un parámetro de diseño.",
+        "Los porcentajes vienen de una población específica (obesidad con resistencia a la dieta autodeclarada); no implican que todo usuario subreporte un 47%.",
+        "No considera si la auditoría ya se hizo: ver recomposition.decide.adjust_plan."
+      ],
+      "evidence": {
+        "source_id": "LICHTMAN_VIA_ISSN_2017",
+        "quality": "not_stated",
+        "locator": "ISSN 2017, sección Adaptations to underfeeding (Lichtman et al. [131])",
+        "review_status": "verified",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "RULE_008",
+        "condition": "semanas_sin_cambio_peso >= 2 AND deficit_teorico_cumplido",
+        "action": "REQUERIR_AUDITORIA_PESAJE_ALIMENTOS; reducir_calorias = false"
+      }
+    },
+    {
+      "id": "nutrition.safety.lean_mass_loss_risk",
+      "category": "safety",
+      "kind": "alert",
+      "priority": "not_stated",
+      "applies_when": {
+        "any": [
+          {
+            "fact": "does_resistance_training",
+            "op": "eq",
+            "value": false
+          },
+          {
+            "fact": "protein_g_per_kg",
+            "op": "lt",
+            "value": 1.4
+          },
+          {
+            "all": [
+              {
+                "fact": "body_fat_category",
+                "op": "eq",
+                "value": "low"
+              },
+              {
+                "fact": "weekly_weight_loss_pct",
+                "op": "gt",
+                "value": 1
+              }
+            ]
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "lean_mass_loss_risk",
+          "value": "high"
+        }
+      ],
+      "message": "Para retener masa magra: entrenamiento de fuerza, proteína dentro del rango recomendado y una tasa de pérdida adecuada.",
+      "see_rules": [
+        "nutrition.protein.athletic_baseline",
+        "nutrition.protein.deficit_lean_trained_ffm",
+        "nutrition.rate.lean_or_athlete"
+      ],
+      "finding": "Proteína adecuada, entrenamiento de fuerza y una tasa apropiada de pérdida de peso deben ser el foco principal para retener (o ganar) masa magra durante la pérdida de grasa.",
+      "limitations": [
+        "La tasa exacta de atrofia muscular depende de la genética, historial de entrenamiento y balance hormonal del usuario."
+      ],
+      "review_notes": [
+        "Los umbrales son interpretación sobre la fuente: <1,4 g/kg es el mínimo de la recomendación del ISSN y >1,0% semanal es el máximo sugerido para magros.",
+        "Se cambió el mensaje: el original pedía siempre 2,3 g/kg FFM, pero esa dosis solo aplica a magros entrenados en déficit."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Conclusions and recommendations ('Adequate protein, resistance training, and an appropriate rate of weight loss should be the primary focus...')",
+        "review_status": "verified",
+        "basis": "heuristic"
+      },
+      "original": {
+        "id": "RULE_009",
+        "condition": "NOT entrenamiento_fuerza OR proteina_g_per_kg < 1.4 OR (body_fat == BAJO AND tasa_semanal_pct > 1.0)",
+        "action": "nivel_riesgo_catabolismo = ALTO"
+      }
+    },
+    {
+      "id": "nutrition.macros.distribution_any",
+      "category": "macronutrients",
+      "kind": "no_consistent_effect",
+      "priority": "not_stated",
+      "applies_when": null,
+      "prescribe": [
+        {
+          "variable": "macronutrient_distribution",
+          "value": "any"
+        }
+      ],
+      "finding": "Un amplio rango de enfoques dietéticos (desde bajos en grasa hasta bajos en carbohidratos/cetogénicos, y todo lo intermedio) puede ser similarmente efectivo para mejorar la composición corporal, lo que permite flexibilidad. Ninguna comparación controlada isocalórica con proteína igualada mostró una ventaja relevante de pérdida de grasa para dietas bajas en carbohidratos o cetogénicas.",
+      "limitations": [
+        "El rendimiento deportivo es un objetivo aparte, con demandas de carbohidratos que dependen del deporte: ver nutrition.safety.low_carb_endurance_performance."
+      ],
+      "review_notes": [
+        "Resuelve conflict.macro_distribution a favor de la flexibilidad (Position Statement 5).",
+        "Reemplaza RULE_010 'grasa 20-35% del TDEE': en la fuente eso es la definición de dieta baja en grasa (AMDR, % de la energía total), no una recomendación.",
+        "Supone calorías y proteína ya fijadas por las demás reglas; el reparto grasa/carbohidratos queda a preferencia del usuario (gap.macro_split_method)."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Position Statement 5; Conclusions and recommendations",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_010",
+        "condition": "General",
+        "action": "grasa 20-35% TDEE; carbohidratos = calorías restantes"
+      }
+    },
+    {
+      "id": "nutrition.macros.pufa_over_sfa_in_surplus",
+      "category": "macronutrients",
+      "kind": "option",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "energy_phase",
+            "op": "eq",
+            "value": "surplus"
+          }
+        ]
+      },
+      "prescribe": [
+        {
+          "variable": "fat_source_priority",
+          "value": "pufa_over_sfa"
+        }
+      ],
+      "finding": "En un superávit con dietas enriquecidas en grasa, la relación masa magra:grasa ganada fue 1:1 con grasas poliinsaturadas (PUFA) vs 1:4 con saturadas (SFA), con más grasa hepática y visceral en el grupo SFA.",
+      "limitations": [
+        "Hay que tener cautela al generalizar más allá de las fuentes de grasa usadas (aceite de palma para SFA, aceite de girasol para PUFA)."
+      ],
+      "review_notes": [
+        "Se apoya en un solo estudio (Rosqvist et al.)."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Sección Adaptations to overfeeding (Rosqvist et al. [134])",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_010",
+        "condition": "superávit",
+        "action": "prioridad_lipidos PUFA_SOBRE_SFA"
+      }
+    },
+    {
+      "id": "nutrition.safety.low_carb_endurance_performance",
+      "category": "safety",
+      "kind": "alert",
+      "priority": "not_stated",
+      "applies_when": {
+        "all": [
+          {
+            "fact": "endurance_or_high_intensity_sport",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "fact": "carbs_g_per_day",
+            "op": "lte",
+            "value": 50
+          }
+        ]
+      },
+      "emit": [
+        {
+          "signal": "performance_risk_low_carb",
+          "value": true
+        }
+      ],
+      "finding": "La restricción de carbohidratos puede tener potencial ergolítico, particularmente en deportes de resistencia; las dietas altas en grasa y restringidas en carbohidratos afectaron el trabajo de alta intensidad. Los efectos sobre fuerza y potencia requieren más investigación.",
+      "limitations": [
+        "Los efectos de la restricción de carbohidratos sobre la fuerza y la potencia no están establecidos."
+      ],
+      "review_notes": [
+        "El umbral ~50 g/día es la definición de dieta cetogénica en la fuente, no un umbral de riesgo validado.",
+        "Corregida: no aplica al entrenamiento de fuerza por sí solo."
+      ],
+      "evidence": {
+        "source_id": "ISSN_2017_DIETS_BODY_COMP",
+        "quality": "not_stated",
+        "locator": "Sección Ketogenic diets (rendimiento deportivo); Conclusions and recommendations",
+        "review_status": "verified"
+      },
+      "original": {
+        "id": "RULE_010",
+        "condition": "deporte_alta_intensidad AND carbohidratos_g_diarios < 50",
+        "action": "ALERTA_RIESGO_RENDIMIENTO_ERGOLITICO"
+      }
+    }
+  ],
+  "gaps": [
+    {
+      "id": "gap.deficit_magnitude",
+      "variable": "energy_deficit_kcal",
+      "status": "not_determined",
+      "note": "La fuente no cuantifica el déficit; solo dice que cuanto mayor la grasa inicial, más agresivo puede ser.",
+      "app_impact": "El motor no puede fijar calorías objetivo. Una opción de diseño es derivar el déficit de la tasa de pérdida objetivo, pero sería una decisión de diseño, no evidencia.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.pace_and_deficit"
+    },
+    {
+      "id": "gap.loss_rate_non_lean",
+      "variable": "weekly_weight_loss",
+      "status": "not_determined",
+      "note": "La fuente solo cuantifica la tasa para personas magras (0,5-1,0%/semana). Para grasa moderada o alta solo dice, cualitativamente, que el déficit puede ser más agresivo. El '1,0-2,5 kg/semana' de la investigación es el objetivo descriptivo de las dietas de muy bajas calorías, no una recomendación.",
+      "app_impact": "El usuario típico de recomposición (grasa moderada) queda sin tasa de pérdida objetivo respaldada.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.pace_and_deficit"
+    },
+    {
+      "id": "gap.body_fat_classification",
+      "variable": "body_fat_category",
+      "status": "not_determined",
+      "note": "Las categorías baja / moderada / alta no tienen umbrales. La fuente revisa métodos de composición corporal (todos con fortalezas y limitaciones) pero no define categorías.",
+      "app_impact": "Las reglas de tasa de pérdida, riesgo de masa magra y proteína para magros dependen de esta clasificación.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.body_composition"
+    },
+    {
+      "id": "gap.ffm_estimation",
+      "variable": "fat_free_mass_kg",
+      "status": "not_determined",
+      "note": "La proteína por masa libre de grasa requiere una FFM confiable; la fuente no recomienda un método concreto (depende de practicidad, costo y consistencia).",
+      "app_impact": "La app muestra 'masa magra estimada' con datos mock; no hay método real de estimación.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.body_composition"
+    },
+    {
+      "id": "gap.surplus_magnitude",
+      "variable": "energy_surplus_kcal",
+      "status": "not_determined",
+      "note": "La fuente solo dice 'más grande' para no entrenados y 'más pequeño' para avanzados, con excepciones individuales. No da kcal.",
+      "app_impact": "Solo relevante si el plan entra en fase de superávit; el motor no puede calcular el objetivo en kcal.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.pace_and_deficit"
+    },
+    {
+      "id": "gap.training_level_intermediate",
+      "variable": "training_level",
+      "status": "not_determined",
+      "note": "La guía de superávit solo distingue no entrenados y avanzados.",
+      "app_impact": "Un usuario intermedio no tiene orientación de tamaño de superávit.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP",
+      "design_decision": "design.training_experience"
+    },
+    {
+      "id": "gap.macro_split_method",
+      "variable": "fat_and_carbohydrate_split",
+      "status": "not_restrictive",
+      "note": "Con calorías y proteína fijadas, la fuente considera similarmente efectivos repartos desde bajos en grasa hasta cetogénicos.",
+      "app_impact": "El reparto grasa/carbohidratos es decisión del usuario o de diseño (p.ej. un reparto por defecto editable), no de evidencia.",
+      "source_id": "ISSN_2017_DIETS_BODY_COMP"
+    },
+    {
+      "id": "gap.goal_to_energy_phase",
+      "variable": "energy_phase",
+      "status": "not_determined",
+      "note": "Las reglas dependen de la fase energética (déficit/mantenimiento/superávit); ninguna fuente define qué fase corresponde al objetivo 'recomposición'.",
+      "app_impact": "El Decision Engine necesitará una regla de diseño explícita para asignar la fase según objetivo y perfil.",
+      "source_id": null,
+      "design_decision": "design.supported_goal"
+    }
+  ]
+}

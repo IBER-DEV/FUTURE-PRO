@@ -1,0 +1,191 @@
+{
+  "metadata": {
+    "title": "Base de Conocimiento de Entrenamiento de Fuerza para Recomposición Corporal (V1)",
+    "version": "1.0.0",
+    "description": "Reglas de decisión deterministas para motor de entrenamiento basadas exclusivamente en evidencia del ACSM (2026).",
+    "source": "ACSM Position Stand (2026) - Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+    "pmid": "41843416",
+    "target_population": "Adultos sanos (>=18 años)",
+    "evidence_base": "137 revisiones sistemáticas, >30.000 participantes"
+  },
+  "rules": [
+    {
+      "id": "RULE_VOL_HYPERSTROPHY_MIN",
+      "category": "Volumen",
+      "variable": "Series semanales por grupo muscular",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "Objetivo == 'Hipertrofia'",
+      "action": "Establecer volumen semanal >= 10 series por grupo muscular",
+      "scientific_finding": "La hipertrofia muscular se incrementa acumulando volúmenes más altos (>=10 series/semana).",
+      "evidence_quality": "Alta",
+      "limitations": "No establece un límite máximo superior de volumen recuperable.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_VOL_STRENGTH_SETS",
+      "category": "Volumen",
+      "variable": "Series por ejercicio (Fuerza)",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "Objetivo_Ejercicio == 'Fuerza'",
+      "action": "Prescribir entre 2 y 3 series por ejercicio",
+      "scientific_finding": "La fuerza voluntaria se potencia realizando de 2 a 3 series por ejercicio.",
+      "evidence_quality": "Alta",
+      "limitations": "No evalúa si realizar más de 3 series por ejercicio ofrece ventajas adicionales de fuerza.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_FREQ_MIN_WEEKLY",
+      "category": "Frecuencia",
+      "variable": "Sesiones de entrenamiento por semana",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "Frecuencia semanal >= 2 sesiones/semana",
+      "scientific_finding": "La fuerza voluntaria se incrementa entrenando con una frecuencia >=2 sesiones/semana.",
+      "evidence_quality": "Alta",
+      "limitations": "No especifica frecuencia óptima por grupo muscular individual ni si frequencies >2 días/semana son mejores.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_INTENSITY_STRENGTH",
+      "category": "Intensidad",
+      "variable": "Carga de trabajo (% 1RM)",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "Objetivo_Ejercicio == 'Fuerza'",
+      "action": "Prescribir cargas >= 80% de 1RM",
+      "scientific_finding": "La fuerza voluntaria se potencia mediante la elevación de cargas pesadas (>=80% 1RM).",
+      "evidence_quality": "Alta",
+      "limitations": "No define una intensidad obligatoria en % 1RM para hipertrofia.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_ORDER_HEAVY_FIRST",
+      "category": "Orden de Ejercicios",
+      "variable": "Posición del ejercicio en la sesión",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "Ejercicio_Tipo == 'Carga_Pesada_Fuerza'",
+      "action": "Colocar el ejercicio al inicio de la sesión de entrenamiento",
+      "scientific_finding": "La fuerza voluntaria se optimiza al realizar los ejercicios con cargas pesadas al principio de la sesión.",
+      "evidence_quality": "Alta",
+      "limitations": "Sujeto a la fatiga general del usuario y disponibilidad de tiempo.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_EXECUTION_ROM",
+      "category": "Ejecución Técnica",
+      "variable": "Rango de movimiento",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "Ejecutar ejercicios a rango completo de movimiento (Complete ROM)",
+      "scientific_finding": "La fuerza voluntaria se incrementa al entrenar a través de un rango completo de movimiento.",
+      "evidence_quality": "Alta",
+      "limitations": "Puede requerir ajustes individuales por movilidad o patologías articulares previas.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_PROGRESSION_GENERAL",
+      "category": "Progresión",
+      "variable": "Sobrecarga progresiva",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "Aplicar incremento progresivo en la exigencia del entrenamiento",
+      "scientific_finding": "Los adultos sanos deben realizar entrenamiento de fuerza progresivo para mejorar función y tamaño muscular.",
+      "evidence_quality": "Alta",
+      "limitations": "La periodización estructurada no mostró superioridad consistente sobre esquemas no periodizados.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [13, 33]"
+    },
+    {
+      "id": "RULE_FAILURE_OPTIONAL",
+      "category": "Fatiga / Fallo",
+      "variable": "Entrenamiento al fallo muscular",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "No requerir fallo muscular absoluto (Permitir finalizar la serie antes de la fatiga muscular momentánea)",
+      "scientific_finding": "Entrenar hasta la fatiga muscular momentánea no impactó de forma consistente los resultados de fuerza o masa muscular.",
+      "evidence_quality": "Alta",
+      "limitations": "Las fuentes no especifican valores de RIR (Repeticiones en Reserva).",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_EQUIPMENT_FLEXIBLE",
+      "category": "Selección de Ejercicios",
+      "variable": "Tipo de equipamiento",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "Permitir uso indiferente de pesos libres, máquinas o poleas según disponibilidad",
+      "scientific_finding": "El tipo de equipamiento no influyó de forma consistente en las adaptaciones del entrenamiento.",
+      "evidence_quality": "Alta",
+      "limitations": "Ninguna en adultos sanos.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_COMPLEXITY_FLEXIBLE",
+      "category": "Selección de Ejercicios",
+      "variable": "Complejidad del ejercicio",
+      "priority": "IMPRESCINDIBLE",
+      "condition": "General",
+      "action": "Incluir libremente ejercicios multiarticulares o monoarticulares",
+      "scientific_finding": "La complejidad del ejercicio no alteró de forma consistente los resultados finales.",
+      "evidence_quality": "Alta",
+      "limitations": "Ninguna en adaptaciones generales de masa y fuerza.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_ECCENTRIC_OVERLOAD",
+      "category": "Hipertrofia Avanzada",
+      "variable": "Sobrecarga excéntrica",
+      "priority": "ÚTIL",
+      "condition": "Modulo_Hipertrofia_Avanzada == True",
+      "action": "Incorporar técnicas de sobrecarga excéntrica",
+      "scientific_finding": "La hipertrofia muscular se ve potenciada por la sobrecarga excéntrica.",
+      "evidence_quality": "Alta",
+      "limitations": "Requiere equipamiento o asistencia especializada.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_POWER_INTENSITY",
+      "category": "Potencia Muscular",
+      "variable": "Carga (% 1RM para potencia)",
+      "priority": "ÚTIL",
+      "condition": "Objetivo_Ejercicio == 'Potencia'",
+      "action": "Prescribir cargas entre 30% y 70% de 1RM con fase concéntrica rápida",
+      "scientific_finding": "La potencia se optimiza con cargas moderadas (30%-70% 1RM) y velocidad concéntrica rápida.",
+      "evidence_quality": "Alta",
+      "limitations": "Objetivo secundario para recomposición corporal pura.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    },
+    {
+      "id": "RULE_POWER_VOLUME",
+      "category": "Potencia Muscular",
+      "variable": "Volumen acumulado para potencia",
+      "priority": "ÚTIL",
+      "condition": "Objetivo_Ejercicio == 'Potencia'",
+      "action": "Mantener repeticiones totales por combinación <= 24 reps*series",
+      "scientific_finding": "La potencia responde mejor a volúmenes bajos a moderados (<=24 repeticiones acumuladas).",
+      "evidence_quality": "Alta",
+      "limitations": "Solo aplicable cuando el objetivo explícito es potencia física.",
+      "source_citation": "Currier et al. (2026), Med Sci Sports Exerc [12, 32]"
+    }
+  ],
+  "undetermined_variables": [
+    {
+      "variable": "Tiempos de descanso inter-series",
+      "status": "No suficientemente determinado en las fuentes.",
+      "note": "Requiere incluir fuentes suplementarias para definir temporizadores en la app."
+    },
+    {
+      "variable": "Rangos de repeticiones fijos (ej. 8-12 reps)",
+      "status": "No restrictivo / Variable.",
+      "note": "La evidencia respalda presripciones variables sin imponer una única zona de reps."
+    },
+    {
+      "variable": "Ajuste específico por déficit calórico en recomposición",
+      "status": "No suficientemente determinado en las fuentes.",
+      "note": "El estudio se enfoca en adaptaciones de fuerza e hipertrofia sin intervenir variable nutricional."
+    },
+    {
+      "variable": "Estratificación de reglas por nivel de experiencia (Principiante vs. Avanzado)",
+      "status": "No desglosado cuantitativamente.",
+      "note": "La revisión analiza adultos sanos en general."
+    }
+  ]
+}

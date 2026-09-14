@@ -1,0 +1,315 @@
+{
+  "metadata": {
+    "title": "Base de Conocimiento para Recomposición Corporal y Nutrición Aplicada",
+    "source": "International Society of Sports Nutrition (ISSN) Position Stand: Diets and Body Composition (2017)",
+    "version": "1.0.0",
+    "architecture": "knowledge/training/",
+    "files_structure": [
+      "knowledge/training/sources.md",
+      "knowledge/training/evidence.md",
+      "knowledge/training/rules.md",
+      "knowledge/training/training_rules.json"
+    ]
+  },
+  "sources": [
+    {
+      "id": "ISSN_2017_DIETS_BODY_COMP",
+      "title": "International Society of Sports Nutrition position stand: diets and body composition",
+      "authors": [
+        "Alan A. Aragon",
+        "Brad J. Schoenfeld",
+        "Robert Wildman",
+        "Susan Kleiner",
+        "Trisha VanDusseldorp",
+        "Lem Taylor",
+        "Conrad P. Earnest",
+        "Paul J. Arciero",
+        "Colin Wilborn",
+        "Douglas S. Kalman",
+        "Jeffrey R. Stout",
+        "Darryn S. Willoughby",
+        "Bill Campbell",
+        "Shawn M. Arent",
+        "Laurent Bannock",
+        "Abbie E. Smith-Ryan",
+        "Jose Antonio"
+      ],
+      "journal": "Journal of the International Society of Sports Nutrition",
+      "year": 2017,
+      "doi": "10.1186/s12970-017-0174-y",
+      "pmid": "28630601",
+      "pmcid": "PMC5470183"
+    }
+  ],
+  "rules": [
+    {
+      "id": "RULE_001",
+      "category": "Balance Energético / Déficit",
+      "target_variable": "calorias_objetivo_deficit",
+      "description": "Establece el consumo calórico objetivo para pérdida de grasa basándose en TDEE y déficit energético sostenido.",
+      "evidence_summary": "La pérdida de masa grasa requiere un déficit calórico sostenido. El déficit puede ser lineal (diario) o no lineal (semanal) sin diferencias en composición corporal si se igualan calorías y proteína.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "objetivo": "PERDIDA_GRASA"
+        },
+        "then": {
+          "formula": "TDEE - margen_deficit",
+          "distribucion_permitida": [
+            "LINEAL_DIARIO",
+            "INTERMITENTE_SEMANAL"
+          ],
+          "preferencia_usuario_override": true
+        }
+      },
+      "limitations": "El déficit calórico por sí solo induce termogénesis adaptativa y reduce la síntesis proteica si no se acompaña de entrenamiento de fuerza y alta proteína.",
+      "rule_type": "Regla Algorítmica"
+    },
+    {
+      "id": "RULE_002",
+      "category": "Velocidad de Pérdida de Peso",
+      "target_variable": "tasa_perdida_semanal_pct",
+      "description": "Define la velocidad segura y óptima de pérdida de peso para maximizar la retención de masa magra (LM).",
+      "evidence_summary": "Tasas más lentas (0.5-1.0% del peso corporal/semana) preservan mejor la masa magra en delgados y atletas (0.7% superó a 1.4%). En personas con obesidad se toleran inicialmente pérdidas de 1.0-2.5 kg/semana.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "switch": [
+          {
+            "condition": {
+              "perfil": "ATLETA_O_DELGADO",
+              "body_fat": "BAJO"
+            },
+            "then": {
+              "tasa_semanal_min_pct": 0.5,
+              "tasa_semanal_max_pct": 1.0,
+              "unidad": "pct_peso_corporal"
+            }
+          },
+          {
+            "condition": {
+              "body_fat": "ALTO_O_OBESIDAD"
+            },
+            "then": {
+              "tasa_semanal_min_kg": 1.0,
+              "tasa_semanal_max_kg": 2.5,
+              "unidad": "kg_por_semana"
+            }
+          }
+        ]
+      },
+      "limitations": "Tasas demasiado lentas en obesidad severa pueden desmotivar la adherencia sin aportar protección adicional a la masa muscular.",
+      "rule_type": "Regla Algorítmica"
+    },
+    {
+      "id": "RULE_003",
+      "category": "Proteína Diaria Base",
+      "target_variable": "proteina_diaria_g",
+      "description": "Calcula el requerimiento proteico diario para deportistas en estado eucalórico o superávit.",
+      "evidence_summary": "La recomendación proteica general para deportistas y personas físicamente activas es de 1.4 a 2.0 g/kg de peso corporal total al día.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "fase_nutricional": [
+            "EUCALORICA",
+            "SUPERAVIT"
+          ],
+          "nivel_actividad": "ACTIVO_O_DEPORTISTA"
+        },
+        "then": {
+          "proteina_g_per_kg_min": 1.4,
+          "proteina_g_per_kg_max": 2.0,
+          "base_calculo": "PESO_TOTAL_KG"
+        }
+      },
+      "limitations": "Durante déficits calóricos en sujetos delgados, este rango resulta insuficiente para preservar óptimamente la masa magra.",
+      "rule_type": "Regla Algorítmica"
+    },
+    {
+      "id": "RULE_004",
+      "category": "Proteína en Déficit / Sujetos Magros",
+      "target_variable": "proteina_deficit_ffm_g",
+      "description": "Calcula la proteína diaria necesaria en déficit calórico para atletas y personas delgadas basándose en la FFM.",
+      "evidence_summary": "Ingestas de 2.3 a 3.1 g/kg de Masa Libre de Grasa (FFM) son requeridas para maximizar la retención muscular en sujetos delgados y entrenados durante una restricción calórica.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "fase_nutricional": "DEFICIT",
+          "entrenado_fuerza": true,
+          "body_fat": "BAJO_O_MODERADO"
+        },
+        "then": {
+          "proteina_g_per_kg_ffm_min": 2.3,
+          "proteina_g_per_kg_ffm_max": 3.1,
+          "base_calculo": "FFM_KG"
+        }
+      },
+      "limitations": "Requiere una estimación confiable de la FFM/Masa Libre de Grasa; errores en la medición del % de grasa desajustarán la prescripción.",
+      "rule_type": "Regla Algorítmica"
+    },
+    {
+      "id": "RULE_005",
+      "category": "Distribución de Proteína",
+      "target_variable": "frecuencia_y_dosis_comidas_proteina",
+      "description": "Establece la frecuencia intra-día y la dosis mínima de proteína por comida (Protein-Pacing).",
+      "evidence_summary": "El esquema de protein-pacing (4-6 comidas al día con >30% de calorías de proteína por comida o >0.25-0.40 g/kg) mejora la composición corporal, reduce grasa abdominal y aumenta el TEF.",
+      "evidence_strength": "Moderada",
+      "logic": {
+        "then": {
+          "num_comidas_min": 4,
+          "num_comidas_max": 6,
+          "proteina_pct_kcal_comida_min": 30.0,
+          "proteina_g_per_kg_comida_min": 0.25,
+          "proteina_g_per_kg_comida_max": 0.4
+        }
+      },
+      "limitations": "Escasa evidencia comparativa directa de diferentes frecuencias intra-día en atletas de élite en superávit.",
+      "rule_type": "Heurística de Distribución"
+    },
+    {
+      "id": "RULE_006",
+      "category": "Balance Energético / Superávit",
+      "target_variable": "calorias_objetivo_superavit",
+      "description": "Ajusta la magnitud del superávit calórico según el nivel de experiencia en entrenamiento de fuerza.",
+      "evidence_summary": "La ganancia eficiente de masa magra requiere un superávit. Principiantes pueden utilizar superávits más altos; atletas avanzados requieren superávits pequeños (~100-300 kcal/día) para evitar acumulación excesiva de grasa.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "switch": [
+          {
+            "condition": {
+              "nivel_entrenamiento": "PRINCIPIANTE_NO_ENTRENADO"
+            },
+            "then": {
+              "superavit_kcal_min": 300,
+              "superavit_kcal_max": 500,
+              "tipo_superavit": "MODERADO_ALTO"
+            }
+          },
+          {
+            "condition": {
+              "nivel_entrenamiento": "AVANZADO_ATLETA"
+            },
+            "then": {
+              "superavit_kcal_min": 100,
+              "superavit_kcal_max": 300,
+              "tipo_superavit": "PEQUEÑO_CONTROLADO"
+            }
+          }
+        ]
+      },
+      "limitations": "El NEAT inconsciente puede incrementarse drásticamente ante un sobreconsumo calórico (hasta 692 kcal/día), anulando el superávit planificado.",
+      "rule_type": "Regla Algorítmica"
+    },
+    {
+      "id": "RULE_007",
+      "category": "Ajustes Calóricos por Adaptación Metabólica",
+      "target_variable": "tdee_recalculo_adaptativo",
+      "description": "Aplica una corrección al TDEE teórico tras pérdidas sostenidas de peso de ≥10%.",
+      "evidence_summary": "Pérdidas de peso acumuladas ≥10% inducen una reducción del 20-25% en TDEE, incluyendo un 10-15% por termogénesis adaptativa (85-90% atribuible a caídas en NEAT). La proteína alta y el entrenamiento de fuerza mitigan este fenómeno.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "perdida_peso_acumulada_pct": {
+            "gte": 10.0
+          }
+        },
+        "then": {
+          "factor_correccion_tdee_min": 0.85,
+          "factor_correccion_tdee_max": 0.9,
+          "condicion_mitigacion": "Si proteina >= 2.3 g/kg FFM y entrenamiento_fuerza == True, reducir factor de supresion."
+        }
+      },
+      "limitations": "La respuesta de termogénesis adaptativa presenta una elevada variabilidad interindividual.",
+      "rule_type": "Regla de Ajuste Dinámico"
+    },
+    {
+      "id": "RULE_008",
+      "category": "Adherencia y Auditoría de Estancamiento",
+      "target_variable": "alerta_auditoria_estancamiento",
+      "description": "Previene reducciones calóricas innecesarias ante un estancamiento aparente provocadas por sesgos de autorreporte.",
+      "evidence_summary": "Sujetos que reportan resistencia a la dieta suelen subreportar su ingesta real en un 47% (~1053 kcal/día) y sobreestimar el gasto por ejercicio en un 51% (~251 kcal/día).",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "semanas_sin_cambio_peso": {
+            "gte": 2
+          },
+          "deficit_teorico_cumplido": true
+        },
+        "then": {
+          "accion": "REQUERIR_AUDITORIA_PESAJE_ALIMENTOS",
+          "reducir_calorias": false,
+          "mensaje": "Verificar precisión en el pesaje de comidas y registro de actividad física antes de modificar el plan calórico."
+        }
+      },
+      "limitations": "Depende de la disposición del usuario para realizar un seguimiento riguroso del pesaje de alimentos.",
+      "rule_type": "Heurística de Validación"
+    },
+    {
+      "id": "RULE_009",
+      "category": "Riesgo de Catabolismo Muscular",
+      "target_variable": "riesgo_perdida_masa_magra",
+      "description": "Evalúa y alerta sobre condiciones nutricionales o de entrenamiento que comprometen la masa muscular.",
+      "evidence_summary": "Falta de entrenamiento de fuerza, ingestas proteicas bajas (<1.4 g/kg), déficits severos y tasas de pérdida de peso >1.0% semanal en personas delgadas aumentan drásticamente el catabolismo muscular.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "if": {
+          "or": [
+            {
+              "entrenamiento_fuerza": false
+            },
+            {
+              "proteina_g_per_kg": {
+                "lt": 1.4
+              }
+            },
+            {
+              "and": [
+                {
+                  "body_fat": "BAJO"
+                },
+                {
+                  "tasa_semanal_pct": {
+                    "gt": 1.0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "then": {
+          "nivel_riesgo_catabolismo": "ALTO",
+          "intervencion_recomendada": "Activar entrenamiento de resistencia e incrementar proteína a >= 2.3 g/kg FFM."
+        }
+      },
+      "limitations": "La tasa exacta de atrofia muscular depende de la genética, historial de entrenamiento y balance hormonal del usuario.",
+      "rule_type": "Regla de Alerta / Seguridad"
+    },
+    {
+      "id": "RULE_010",
+      "category": "Distribución de Grasas y Carbohidratos",
+      "target_variable": "macronutrientes_grasas_carbohidratos",
+      "description": "Asigna el rango seguro de grasas y distribuye los carbohidratos según las demandas de rendimiento.",
+      "evidence_summary": "Las grasas deben ubicarse entre 20% y 35% de TDEE (AMDR). En superávit calórico, el exceso de PUFA favorece un ratio de ganancia magra:grasa de 1:1 vs 1:4 en SFA. Carbohidratos <50 g/día o restricciones severas son ergolíticos para deportes de alta intensidad y resistencia.",
+      "evidence_strength": "Alta",
+      "logic": {
+        "then": {
+          "grasa_pct_tdee_min": 20.0,
+          "grasa_pct_tdee_max": 35.0,
+          "prioridad_lipidos_superavit": "PUFA_SOBRE_SFA",
+          "carbohidratos_kcal": "CALORIAS_RESTANTES_TRAS_PROT_Y_GRASA",
+          "alerta_carbohidratos_bajos": {
+            "if": {
+              "deporte_alta_intensidad": true,
+              "carbohidratos_g_diarios": {
+                "lt": 50
+              }
+            },
+            "then": "ALERTA_RIESGO_RENDIMIENTO_ERGOLITICO"
+          }
+        }
+      },
+      "limitations": "La flexibilidad metabólica para adaptarse a dietas bajas en carbohidratos sin pérdida de rendimiento de fuerza pura varía individualmente.",
+      "rule_type": "Regla de Distribución de Macronutrientes"
+    }
+  ]
+}

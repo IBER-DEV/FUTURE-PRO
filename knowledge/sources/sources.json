@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0.0",
+  "sources": [
+    {
+      "id": "ACSM_2026_RT",
+      "type": "position_stand",
+      "title": "American College of Sports Medicine Position Stand. Resistance Training Prescription for Muscle Function, Hypertrophy, and Physical Performance in Healthy Adults: An Overview of Reviews",
+      "authors": [
+        "Brad S Currier",
+        "Alysha C D'Souza",
+        "Maria A Fiatarone Singh",
+        "Caroline V Lowisz",
+        "Eric S Rawson",
+        "Brad J Schoenfeld",
+        "Abbie E Smith-Ryan",
+        "Jeremy P Steen",
+        "Gwendolyn A Thomas",
+        "N Travis Triplett",
+        "Tyrone A Washington",
+        "Timothy J Werner",
+        "Stuart M Phillips"
+      ],
+      "organization": "ACSM",
+      "journal": "Medicine & Science in Sports & Exercise",
+      "year": 2026,
+      "citation": "Med Sci Sports Exerc. 2026 Apr 1;58(4):851-872",
+      "doi": "10.1249/MSS.0000000000003897",
+      "pmid": "41843416",
+      "pmcid": "PMC12965823",
+      "population": "Adultos sanos (>=18 años)",
+      "evidence_base": "Overview of reviews: 137 revisiones sistemáticas, >30.000 participantes, intervenciones de 6 a 52 semanas",
+      "research_notes": "knowledge/training/research/sources.md",
+      "verification": "verified",
+      "verified_on": "2026-09-14",
+      "verified_via": "Texto completo de Europe PMC (https://www.ebi.ac.uk/europepmc/webservices/rest/PMC12965823/fullTextXML)",
+      "grading": "QoE por conclusión (0-100%), Tabla 4; sin etiquetas alta/moderada/baja"
+    },
+    {
+      "id": "ISSN_2017_DIETS_BODY_COMP",
+      "type": "position_stand",
+      "title": "International Society of Sports Nutrition position stand: diets and body composition",
+      "authors": [
+        "Alan A. Aragon",
+        "Brad J. Schoenfeld",
+        "Robert Wildman",
+        "Susan Kleiner",
+        "Trisha VanDusseldorp",
+        "Lem Taylor",
+        "Conrad P. Earnest",
+        "Paul J. Arciero",
+        "Colin Wilborn",
+        "Douglas S. Kalman",
+        "Jeffrey R. Stout",
+        "Darryn S. Willoughby",
+        "Bill Campbell",
+        "Shawn M. Arent",
+        "Laurent Bannock",
+        "Abbie E. Smith-Ryan",
+        "Jose Antonio"
+      ],
+      "organization": "ISSN",
+      "journal": "Journal of the International Society of Sports Nutrition",
+      "year": 2017,
+      "doi": "10.1186/s12970-017-0174-y",
+      "pmid": "28630601",
+      "pmcid": "PMC5470183",
+      "research_notes": "knowledge/nutrition/research/Nutrition_Knowledge_Base.json",
+      "verification": "verified",
+      "verified_on": "2026-09-14",
+      "verified_via": "Texto completo de Europe PMC (https://www.ebi.ac.uk/europepmc/webservices/rest/PMC5470183/fullTextXML)",
+      "grading": "Sin calificación de calidad de evidencia"
+    },
+    {
+      "id": "LICHTMAN_VIA_ISSN_2017",
+      "type": "secondary_citation",
+      "title": "Lichtman et al. — subreporte de ingesta (47%) y sobreestimación del ejercicio (51%)",
+      "cited_in": "ISSN_2017_DIETS_BODY_COMP",
+      "research_notes": "knowledge/recomposition/research/recomposition_knowledge_base.json (MON_AUDIT_SUBREPORTING)",
+      "verification": "verified",
+      "verified_on": "2026-09-14",
+      "verified_via": "Pasaje citado dentro del texto completo del ISSN 2017 (sección Adaptations to underfeeding); el estudio original no se leyó",
+      "population": "Personas con obesidad e historial de resistencia a la dieta que declaraban comer <1200 kcal/día"
+    },
+    {
+      "id": "MIFFLIN_ST_JEOR",
+      "type": "method_reference",
+      "title": "Ecuación de Mifflin-St Jeor para tasa metabólica basal (Mifflin et al., 1990)",
+      "used_in": "design.energy_expenditure",
+      "verification": "not_verified"
+    },
+    {
+      "id": "NAVY_BODY_FAT_METHOD",
+      "type": "method_reference",
+      "title": "Método de circunferencias de la US Navy para % de grasa corporal (Hodgdon & Beckett, 1984)",
+      "used_in": "design.body_composition",
+      "verification": "not_verified"
+    },
+    {
+      "id": "EPLEY_1RM",
+      "type": "method_reference",
+      "title": "Fórmula de Epley para estimar 1RM (Epley, 1985)",
+      "used_in": "design.one_rm_estimation",
+      "verification": "not_verified"
+    },
+    {
+      "id": "ENERGY_DENSITY_7700_APPROXIMATION",
+      "type": "method_reference",
+      "title": "Aproximación de ~7700 kcal por kg de peso corporal perdido",
+      "used_in": "design.pace_and_deficit",
+      "verification": "not_verified",
+      "note": "Aproximación conocida por sobreestimar la pérdida a largo plazo; por eso design.energy_expenditure recalibra con datos reales."
+    },
+    {
+      "id": "EXERCISES_DATASET",
+      "type": "dataset",
+      "title": "hasaneyldrm/exercises-dataset",
+      "url": "https://github.com/hasaneyldrm/exercises-dataset",
+      "local_path": "public/exercise-data/data/exercises.json",
+      "license": "MIT (datos); medios © Gym visual con atribución obligatoria",
+      "verification": "raw_source"
+    }
+  ]
+}
