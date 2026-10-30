@@ -50,7 +50,17 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
   const exerciseDone = !!currentExerciseItem && activeSetIndex === -1 && currentExerciseItem.sets.length > 0;
 
   // Editable draft for the active set
-  const [weight, setWeight] = useState(0);
+  const [weight, setWeightValue] = useState(0);
+  // What the user is typing, kept separately so the field can be empty or
+  // half-written ("72," / "") without snapping back to 0.
+  const [weightText, setWeightText] = useState('0');
+  const setWeight = (next: number | ((prev: number) => number)) => {
+    setWeightValue((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      setWeightText(String(value));
+      return value;
+    });
+  };
   const [reps, setReps] = useState(0);
   const [selectedRir, setSelectedRir] = useState<number>(2);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
@@ -394,16 +404,23 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                         <div className="text-center">
                           {/* D-25: type the load directly instead of dozens of taps */}
                           <input
-                            type="number"
+                            type="text"
                             inputMode="decimal"
-                            min={0}
-                            step={0.5}
+                            autoComplete="off"
                             aria-label="Carga en kg"
-                            value={Number.isFinite(weight) ? weight : 0}
+                            placeholder="0"
+                            value={weightText}
+                            onFocus={(e) => e.target.select()}
                             onChange={(e) => {
-                              const v = Number(e.target.value);
-                              setWeight(Number.isFinite(v) && v >= 0 ? v : 0);
+                              // Digits plus one decimal separator (comma or dot), max 1 decimal.
+                              const text = e.target.value.replace(/[^0-9.,]/g, '').replace(/^([^.,]*[.,]\d?).*$/, '$1');
+                              setWeightText(text);
+                              const v = Number(text.replace(',', '.'));
+                              setWeightValue(text === '' || !Number.isFinite(v) ? 0 : v);
                               setWeightError(false);
+                            }}
+                            onBlur={() => {
+                              if (weightText !== '') setWeightText(String(weight));
                             }}
                             className="w-20 bg-transparent text-center text-[28px] font-bold text-black tracking-tight font-sans outline-none focus:ring-2 focus:ring-black rounded-lg"
                           />
