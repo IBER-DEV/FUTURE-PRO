@@ -20,6 +20,7 @@ export const ExerciseCatalogModal: React.FC<ExerciseCatalogModalProps> = ({
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedExerciseDetail, setSelectedExerciseDetail] = useState<Exercise | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setSelectedCategory(initialCategory);
@@ -27,9 +28,19 @@ export const ExerciseCatalogModal: React.FC<ExerciseCatalogModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      let cancelled = false;
+      setIsLoading(true);
       exerciseService
         .getExercises({ category: selectedCategory, query: searchQuery })
-        .then(setExercises);
+        .then((list) => {
+          if (!cancelled) setExercises(list);
+        })
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [isOpen, selectedCategory, searchQuery]);
 
@@ -101,7 +112,12 @@ export const ExerciseCatalogModal: React.FC<ExerciseCatalogModalProps> = ({
 
         {/* Exercise List */}
         <div className="overflow-y-auto p-4 space-y-3 flex-1">
-          {exercises.length === 0 ? (
+          {isLoading && exercises.length === 0 ? (
+            <div role="status" className="text-center py-10 text-[#45474a]">
+              <div className="w-8 h-8 mx-auto rounded-full border-4 border-black border-t-transparent animate-spin" />
+              <p className="text-xs font-semibold mt-2">Cargando ejercicios…</p>
+            </div>
+          ) : exercises.length === 0 ? (
             <div className="text-center py-10 text-[#45474a]">
               <span className="material-symbols-outlined text-4xl opacity-40">search_off</span>
               <p className="text-xs font-semibold mt-2">No se encontraron ejercicios</p>

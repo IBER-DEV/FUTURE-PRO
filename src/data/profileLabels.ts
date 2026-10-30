@@ -1,3 +1,4 @@
+import { normalizeDaysPerWeek } from '../engine/ppl/week';
 import { EquipmentAccess, Pace, TrainingExperience } from '../types/profile';
 
 export const EQUIPMENT_LABEL_ES: Record<EquipmentAccess, string> = {
@@ -19,12 +20,10 @@ export const EXPERIENCE_LABEL_ES: Record<TrainingExperience, string> = {
   over_3_years: 'Más de 3 años entrenando'
 };
 
-// Mirrors src/engine/splitTemplates.ts SPLITS_BY_DAYS_PER_WEEK — a friendly
-// name for the split family the plan generator picked, not a re-derivation.
+// Friendly name for the weekly split (src/engine/ppl/week.ts): always the
+// rotating Push/Pull/Legs cycle, 3-6 days.
 export function splitFamilyLabel(daysPerWeek: number): string {
-  const clamped = Math.min(6, Math.max(2, Math.round(daysPerWeek)));
-  if (clamped <= 3) return 'Cuerpo completo';
-  if (clamped === 4) return 'Torso / Pierna';
-  if (clamped === 5) return 'Push/Pull/Legs + Torso/Pierna';
-  return 'Push/Pull/Legs (x2 por semana)';
+  const days = normalizeDaysPerWeek(daysPerWeek);
+  if (days === 6) return 'Push/Pull/Legs (x2 por semana)';
+  return `Push/Pull/Legs rotativo (${days} días)`;
 }

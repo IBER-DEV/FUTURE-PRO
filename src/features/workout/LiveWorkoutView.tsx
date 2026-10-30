@@ -6,7 +6,7 @@ interface LiveWorkoutViewProps {
   workout: Workout;
   onClose: () => void;
   onFinishWorkout: (durationMinutes: number) => void;
-  onSaveSet: (exerciseId: string, set: WorkoutSet) => void;
+  onSaveSet: (exerciseId: string, set: WorkoutSet) => void | Promise<unknown>;
   onOpenExerciseList: () => void;
 }
 
@@ -52,16 +52,25 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
   // Editable draft for the active set
   const [weight, setWeight] = useState(0);
   const [reps, setReps] = useState(0);
-  const [selectedRir, setSelectedRir] = useState<number>(1);
+  const [selectedRir, setSelectedRir] = useState<number>(2);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [weightError, setWeightError] = useState(false);
 
   // Re-seed the editable draft whenever the active set actually changes
   // (after a save, or after switching exercise) — not on every keystroke.
   useEffect(() => {
     if (activeSet) {
-      setWeight(activeSet.targetWeightKg ?? activeSet.weightKg ?? 0);
+      // D-26: carry the load actually used in the previous set of this exercise
+      // (first week has no prescription, so later sets would otherwise reset to 0).
+      const lastDone = currentExerciseItem?.sets
+        .slice(0, activeSetIndex)
+        .reverse()
+        .find((s) => s.status === 'completed');
+      setWeight(lastDone?.weightKg ?? activeSet.targetWeightKg ?? activeSet.weightKg ?? 0);
       setReps(activeSet.reps ?? 0);
-      setSelectedRir(activeSet.rir ?? 1);
+      setSelectedRir(activeSet.rir ?? 2);
+      setWeightError(false);
     }
   }, [activeSet?.id]);
 
@@ -87,6 +96,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
   };
 
   const adjustWeight = (delta: number) => {
+    setWeightError(false);
     setWeight((prev) => Math.max(0, Number((prev + delta).toFixed(1))));
   };
 
@@ -94,22 +104,37 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
     setReps((prev) => Math.max(1, prev + delta));
   };
 
-  const handleSaveActiveSet = () => {
-    if (!currentExerciseItem || !activeSet) return;
+  const handleSaveActiveSet = async () => {
+    if (!currentExerciseItem || !activeSet || isSaving) return;
+
+    // A loaded exercise saved at 0 kg would be read as bodyweight forever by the progression engine.
+    const isBodyweight = currentExerciseItem.exercise.equipment === 'Peso corporal';
+    if (weight <= 0 && !isBodyweight) {
+      setWeightError(true);
+      return;
+    }
+    setWeightError(false);
+    setIsSaving(true);
 
     setSaveSuccessMsg(true);
     setIsResting(true);
     setRestSecondsLeft(120);
     setRestTotalSeconds(120);
 
-    onSaveSet(currentExerciseItem.exercise.id, {
-      ...activeSet,
-      weightKg: weight,
-      reps,
-      rir: selectedRir,
-      rirLabel: rirLabelFor(selectedRir),
-      status: 'completed'
-    });
+    try {
+      await Promise.resolve(
+        onSaveSet(currentExerciseItem.exercise.id, {
+          ...activeSet,
+          weightKg: weight,
+          reps,
+          rir: selectedRir,
+          rirLabel: rirLabelFor(selectedRir),
+          status: 'completed'
+        })
+      );
+    } finally {
+      setIsSaving(false);
+    }
 
     setTimeout(() => setSaveSuccessMsg(false), 1800);
   };
@@ -334,7 +359,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                       </div>
                     </div>
                     <span className="text-[10px] text-[#45474a] font-semibold">
-                      Meta: {(set.targetWeightKg ?? set.weightKg).toFixed(1)} kg
+                      {set.targetWeightKg != null ? `Meta: ${set.targetWeightKg.toFixed(1)} kg` : 'Meta: elige tu peso'}
                     </span>
                   </div>
 
@@ -353,9 +378,21 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                           -
                         </button>
                         <div className="text-center">
-                          <span className="text-[28px] font-bold text-black tracking-tight font-sans">
-                            {weight.toFixed(1)}
-                          </span>
+                          {/* D-25: type the load directly instead of dozens of taps */}
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            step={0.5}
+                            aria-label="Carga en kg"
+                            value={Number.isFinite(weight) ? weight : 0}
+                            onChange={(e) => {
+                              const v = Number(e.target.value);
+                              setWeight(Number.isFinite(v) && v >= 0 ? v : 0);
+                              setWeightError(false);
+                            }}
+                            className="w-20 bg-transparent text-center text-[28px] font-bold text-black tracking-tight font-sans outline-none focus:ring-2 focus:ring-black rounded-lg"
+                          />
                         </div>
                         <button
                           type="button"
@@ -433,7 +470,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                       <span className="text-[10px] uppercase tracking-wider text-[#45474a] font-bold">
                         Esfuerzo Percibido (RIR - Reps en Reserva)
                       </span>
-                      <span className="text-[10px] text-[#274ed5] font-semibold">Óptimo: 1 - 2</span>
+                      <span className="text-[10px] text-[#274ed5] font-semibold">Objetivo: {currentExerciseItem.targetRir}</span>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       {[
@@ -468,10 +505,16 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                     </div>
                   </div>
 
+                  {weightError && (
+                    <p role="alert" className="mb-2 text-center text-[12px] font-semibold text-[#ba1a1a]">
+                      Elige el peso que usaste
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={handleSaveActiveSet}
-                    className={`w-full h-14 rounded-full text-[16px] font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md cursor-pointer ${
+                    disabled={isSaving}
+                    className={`w-full h-14 rounded-full text-[16px] font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
                       saveSuccessMsg ? 'bg-[#389548] text-white' : 'bg-black text-white hover:bg-neutral-800'
                     }`}
                   >
@@ -501,7 +544,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
                 </div>
                 <div className="text-right">
                   <span className="text-[14px] text-[#45474a] font-medium">
-                    {(set.targetWeightKg ?? set.weightKg).toFixed(1)} kg × {set.targetRepsRange}
+                    {set.targetWeightKg != null ? `${set.targetWeightKg.toFixed(1)} kg` : 'Peso libre'} × {set.targetRepsRange}
                   </span>
                 </div>
               </div>

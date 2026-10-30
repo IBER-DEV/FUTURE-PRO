@@ -1,4 +1,5 @@
 import React from 'react';
+import { FEATURES } from '../../config/features';
 import { RecompMetrics, UserProfile } from '../../types';
 import { Profile } from '../../types/profile';
 import { EQUIPMENT_LABEL_ES, PACE_LABEL_ES, splitFamilyLabel } from '../../data/profileLabels';
@@ -44,31 +45,35 @@ export const WelcomeSummaryView: React.FC<WelcomeSummaryViewProps> = ({
           </p>
         </section>
 
-        {/* What we detected */}
-        <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#45474a]">Lo que detectamos hoy</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-[#f8f9fb] rounded-2xl">
-              <span className="text-[10px] text-[#45474a] font-semibold uppercase">Peso</span>
-              <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWeightKg} kg</p>
+        {FEATURES.recomposition && (
+          <>
+          {/* What we detected */}
+          <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#45474a]">Lo que detectamos hoy</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-[#f8f9fb] rounded-2xl">
+                <span className="text-[10px] text-[#45474a] font-semibold uppercase">Peso</span>
+                <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWeightKg} kg</p>
+              </div>
+              <div className="p-3 bg-[#f8f9fb] rounded-2xl">
+                <span className="text-[10px] text-[#45474a] font-semibold uppercase">Cintura</span>
+                <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWaistCm} cm</p>
+              </div>
             </div>
-            <div className="p-3 bg-[#f8f9fb] rounded-2xl">
-              <span className="text-[10px] text-[#45474a] font-semibold uppercase">Cintura</span>
-              <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWaistCm} cm</p>
-            </div>
-          </div>
-          {bodyFatCategory && (
-            <div className="p-3 bg-[#f8f9fb] rounded-2xl">
-              <span className="text-[10px] text-[#45474a] font-semibold uppercase">Grasa corporal estimada</span>
-              <p className="text-lg font-bold text-black mt-0.5">
-                {metrics.bodyFatPercent}% <span className="text-xs font-medium text-[#45474a]">({BODY_FAT_CATEGORY_LABEL[bodyFatCategory]})</span>
-              </p>
-              <p className="text-[11px] text-[#45474a] mt-1">
-                Estimación por circunferencias (método Navy) — no reemplaza una medición directa (DEXA/bioimpedancia).
-              </p>
-            </div>
-          )}
-        </section>
+            {bodyFatCategory && (
+              <div className="p-3 bg-[#f8f9fb] rounded-2xl">
+                <span className="text-[10px] text-[#45474a] font-semibold uppercase">Grasa corporal estimada</span>
+                <p className="text-lg font-bold text-black mt-0.5">
+                  {metrics.bodyFatPercent}% <span className="text-xs font-medium text-[#45474a]">({BODY_FAT_CATEGORY_LABEL[bodyFatCategory]})</span>
+                </p>
+                <p className="text-[11px] text-[#45474a] mt-1">
+                  Estimación por circunferencias (método Navy) — no reemplaza una medición directa (DEXA/bioimpedancia).
+                </p>
+              </div>
+            )}
+          </section>
+          </>
+        )}
 
         {/* What we prepared */}
         <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
@@ -81,7 +86,7 @@ export const WelcomeSummaryView: React.FC<WelcomeSummaryViewProps> = ({
               Ejercicios reales elegidos según tu equipo disponible: {profile.equipment_access ? EQUIPMENT_LABEL_ES[profile.equipment_access] : '—'}.
             </p>
           </div>
-          {profile.pace && (
+          {FEATURES.recomposition && profile.pace && (
             <div className="p-3.5 rounded-2xl bg-[#f8f9fb] border border-[#c5c6ca]/20">
               <span className="text-[11px] font-bold uppercase text-[#45474a]">Ritmo elegido</span>
               <p className="text-[13px] text-black font-semibold mt-0.5">{PACE_LABEL_ES[profile.pace]}</p>
@@ -98,9 +103,15 @@ export const WelcomeSummaryView: React.FC<WelcomeSummaryViewProps> = ({
               <span>Registra el peso/reps reales de cada serie cuando entrenes — así calculamos tu progreso de fuerza real.</span>
             </li>
             <li className="flex gap-2">
-              <span className="material-symbols-outlined text-[16px] text-[#274ed5] shrink-0">scale</span>
-              <span>Pésate con la frecuencia que elegiste — con eso calculamos si tu peso realmente está bajando, no una suposición.</span>
+              <span className="material-symbols-outlined text-[16px] text-[#274ed5] shrink-0">event_repeat</span>
+              <span>Cada semana el plan sigue la rotación Empuje → Tracción → Pierna. Los ejercicios se mantienen; la carga sube cuando completas todas las series en el tope del rango.</span>
             </li>
+            {FEATURES.recomposition && (
+              <li className="flex gap-2">
+                <span className="material-symbols-outlined text-[16px] text-[#274ed5] shrink-0">scale</span>
+                <span>Pésate con la frecuencia que elegiste — con eso calculamos si tu peso realmente está bajando, no una suposición.</span>
+              </li>
+            )}
             <li className="flex gap-2">
               <span className="material-symbols-outlined text-[16px] text-[#274ed5] shrink-0">show_chart</span>
               <span>En "Progreso" verás tendencias reales una vez tengas suficiente historial — hasta entonces dirá "Sin datos suficientes" en vez de inventar un número.</span>

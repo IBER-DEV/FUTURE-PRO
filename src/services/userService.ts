@@ -4,14 +4,16 @@ import { insforge } from '../lib/insforge';
 import { upsertByDate } from './dbHelpers';
 import { computeRecompMetrics } from './metricsService';
 import { profileService } from './profileService';
+import { todayKey } from './dateKeys';
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayKey();
 
 export interface UserService {
   getCurrentUser(): Promise<UserProfile>;
   addProtein(grams: number): Promise<UserProfile>;
   getRecompMetrics(): Promise<RecompMetrics>;
   saveMeasurement(data: { weightKg?: number; waistCm?: number }): Promise<RecompMetrics>;
+  clearUserState(): void;
 }
 
 class MockUserService implements UserService {
@@ -24,12 +26,23 @@ class MockUserService implements UserService {
     // Local persistence fallback
     try {
       const savedUser = localStorage.getItem(this.storageKey);
-      this.user = savedUser ? JSON.parse(savedUser) : { ...mockUser };
+      this.user = savedUser ? JSON.parse(savedUser) : JSON.parse(JSON.stringify(mockUser));
       const savedMetrics = localStorage.getItem(this.metricsKey);
       this.metrics = savedMetrics ? JSON.parse(savedMetrics) : { ...mockRecompMetrics };
     } catch {
-      this.user = { ...mockUser };
+      this.user = JSON.parse(JSON.stringify(mockUser));
       this.metrics = { ...mockRecompMetrics };
+    }
+  }
+
+  clearUserState(): void {
+    this.user = JSON.parse(JSON.stringify(mockUser));
+    this.metrics = { ...mockRecompMetrics };
+    try {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem(this.metricsKey);
+    } catch {
+      // safe fallback
     }
   }
 

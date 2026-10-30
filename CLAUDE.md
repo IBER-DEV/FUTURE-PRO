@@ -5,6 +5,17 @@ Proyecto personal (lo usarán el usuario y sus amigos → multiusuario) de una P
 
 Pregunta que el sistema debe responder: *¿qué debo hacer hoy para perder grasa manteniendo/ganando músculo, y cómo sé si está funcionando?*
 
+## Giro a app Push/Pull/Legs (2026-10-29)
+El usuario reestructuró la app como **su app de entrenamiento PPL** que genera la rutina de cada semana. Spec: `docs/spec-ppl-semanal.md` (requisitos R1-R29 y P1-P6, cada uno mapeado a tests).
+- Motor puro en `src/engine/ppl/` (`week`, `templates`, `selection`, `progression`, `generateWeek`): sin I/O, determinista. `src/engine/planGenerator.ts` es el adaptador async (catálogo + historial → `Workout[]`).
+- Ciclo de 6 sesiones Push A → Pull A → Legs A → Push B → Pull B → Legs B, 3-6 días/semana, que continúa entre semanas (ancla = semana de `profiles.created_at`).
+- Decisión del usuario: **semana a semana cambian la intensidad y el rendimiento, no los ejercicios**. Los ejercicios de cada hueco son fijos (lista curada de IDs reales en `templates.ts`, gimnasio → mancuernas → peso corporal); progresa la carga/reps (doble progresión + reducción ~10% tras 2 sesiones fallidas; `design.progression` v1.2.0).
+- Recomposición (métricas corporales, proteína, check-ins, fotos) **oculta, no borrada**: `FEATURES.recomposition` en `src/config/features.ts`. Servicios y tablas intactos.
+- Tests: `npm test` (`tsx --test`, sin dependencias nuevas). `templates.test.ts` valida los IDs curados contra el `exercise_index.json` real: si un rebuild de `knowledge/` reclasifica uno, falla el test.
+- `workoutService` cachea el plan por semana en localStorage (`futurepro_weekly_plan_state`); al cambiar de semana o editar el perfil se regenera.
+- QA 2026-10-30 (registro en `.claude/AUDIT_STATE.md`): escritura de series vía `src/services/sessionLogger.ts` (sesión memoizada y persistida, select→update/insert idempotente, cola de reintentos que conserva el `completed_at` original). Todas las claves de fecha son el día **local** (`localIsoDate` / `src/services/dateKeys.ts`), nunca `toISOString().slice(0,10)`. Al cambiar de usuario o cerrar sesión, `App.tsx` llama `clearUserState()` en workout/user/progress service. "Completada" se reconcilia con `workout_sessions` cerradas en la semana (match por título).
+- E2E con Playwright: sin cuenta verificada se usa un backend simulado del lado del test (`page.context().route`), nunca mocks en la app. Desactivar la verificación de correo del proyecto está bloqueado por permisos.
+
 ## Arquitectura objetivo (decidida 2026-09-14)
 Primero se quiso algo mínimo; después el usuario decidió construir por capas, **sin AI Coach** por ahora:
 

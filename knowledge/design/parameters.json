@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0.0",
-  "parameters_version": "1.1.0",
+  "parameters_version": "1.2.0",
   "title": "Parámetros de diseño del Decision Engine v1",
   "basis": "heuristic",
   "notes": [
@@ -317,12 +317,12 @@
       "rationale": "El ACSM no prefiere un split sobre otro (frecuencia con volumen igualado no afecta hipertrofia) y recomienda cubrir empuje/tracción y tren superior/inferior (training.selection.major_muscle_groups). No hay evidencia que decida la estructura exacta por días/semana: es una decisión de programación práctica, no clínica.",
       "params": {
         "splits_by_days_per_week": {
-          "2": "full_body_x2",
-          "3": "full_body_x3",
-          "4": "upper_lower_x2",
-          "5": "push_pull_legs_upper_lower",
-          "6": "push_pull_legs_x2"
+          "3": "push_pull_legs_rotating",
+          "4": "push_pull_legs_rotating",
+          "5": "push_pull_legs_rotating",
+          "6": "push_pull_legs_rotating"
         },
+        "rotation": "Ciclo de 6 sesiones Push A → Pull A → Legs A → Push B → Pull B → Legs B que continúa entre semanas (v1.2.0: la app pasó a ser PPL; antes full body / upper-lower según días).",
         "exercises_per_day": {
           "min": 4,
           "max": 7
@@ -340,7 +340,7 @@
           "compound_hypertrophy": "8-12",
           "isolation": "10-15"
         },
-        "implementation": "Tablas exactas de días/patrones en src/engine/splitTemplates.ts (referencian este id). Se mantienen en código, no en JSON, para no duplicar una estructura que el código ya valida en tiempo de compilación."
+        "implementation": "Plantillas, días de entrenamiento y rotación en src/engine/ppl/ (templates.ts, week.ts); especificación en docs/spec-ppl-semanal.md. Se mantienen en código, no en JSON, para no duplicar una estructura que el código ya valida en tiempo de compilación."
       }
     },
     {
@@ -379,7 +379,8 @@
       "resolves_gaps": [],
       "rationale": "El ACSM exige sobrecarga progresiva (training.progression.progressive_overload) pero no especifica el algoritmo — es un vacío de diseño, no de evidencia. La doble progresión (subir peso solo al llegar al techo del rango de reps con el esfuerzo objetivo) es el método más usado en programación de fuerza por ser simple y sin ambigüedad para quien no tiene entrenador.",
       "params": {
-        "rule": "Si en la sesión anterior TODAS las series de trabajo (no warmup) de ese ejercicio llegaron al techo del rango de reps objetivo con RIR <= objetivo, subir peso. Si no, repetir el mismo peso.",
+        "rule": "Si en la sesión anterior TODAS las series de trabajo (no warmup ni drop) de ese ejercicio llegaron al techo del rango de reps objetivo, subir peso y volver al mínimo del rango. Si no, mismo peso apuntando a +1 rep sobre la serie más débil. Dos sesiones seguidas al mismo peso con alguna serie bajo el mínimo del rango → bajar ~10% (redondeado a 2,5 kg).",
+        "rule_change_1_2_0": "Se quitó la condición RIR <= objetivo: llegar al techo de reps con RIR más alto que el objetivo significa que sobraba capacidad (más motivo para subir), y sin RIR registrado el ejercicio no progresaba nunca. Se agregaron el objetivo +1 rep y la reducción por estancamiento. Implementación: src/engine/ppl/progression.ts.",
         "weight_increment_kg": {
           "upper_body_pattern": 2.5,
           "lower_body_pattern": 5

@@ -10,7 +10,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "knowledge:build": "tsx scripts/knowledge/build.ts",
-    "knowledge:validate": "tsx scripts/knowledge/validate.ts"
+    "knowledge:validate": "tsx scripts/knowledge/validate.ts",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

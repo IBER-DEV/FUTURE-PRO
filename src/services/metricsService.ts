@@ -12,6 +12,7 @@ import { Profile } from '../types/profile';
 import { BodyFatCategory, classifyBodyFat, estimateBodyFatPercent, estimateFatFreeMassKg } from '../engine/bodyComposition';
 import { computeStrengthIndex, computeWaistTrend, computeWeightTrend, StrengthSet, TrendDirection } from '../engine/trends';
 import { getCompletedSets } from './workoutHistoryService';
+import { dayKeyOfTimestamp, daysBetweenKeys, localWeekKeys, todayKey } from './dateKeys';
 
 const BODY_FAT_LABEL_ES: Record<BodyFatCategory, string> = {
   low: 'Grasa baja',
@@ -162,9 +163,9 @@ function leanMassMonthlyGainKg(series: { date: string; ffmKg: number }[]): numbe
 }
 
 function formatLastWeighIn(measuredOn: string): string {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayKey();
   if (measuredOn === today) return 'Hoy';
-  const days = Math.round((new Date(today).getTime() - new Date(measuredOn).getTime()) / 86400000);
+  const days = daysBetweenKeys(measuredOn, today);
   return days === 1 ? 'Ayer' : `Hace ${days} días`;
 }
 
@@ -232,38 +233,35 @@ const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const;
 // Shared by computeWeekDays (ProgressView) and computeDashboardWeekStatus
 // (Dashboard "Tu semana"): which calendar days of the current Mon-Sun week
 // already have a real completed workout_sessions row.
-async function getWeekSessionDays(): Promise<{ monday: Date; todayIdx: number; completedDays: Set<string> }> {
-  const now = new Date();
-  const todayIdx = (now.getDay() + 6) % 7; // 0 = Monday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - todayIdx);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+async function getWeekSessionDays(): Promise<{ keys: string[]; todayIdx: number; completedDays: Set<string>; completedSessions: number }> {
+  const { keys, todayIdx, startLocal, endLocal } = localWeekKeys(new Date());
 
   // No .not('completed_at','is',null): the SDK doesn't expose .not(), and it's
   // redundant here anyway — gte/lte already exclude null completed_at rows.
   const { data } = await insforge.database
     .from('workout_sessions')
     .select('completed_at')
-    .gte('completed_at', monday.toISOString())
-    .lte('completed_at', sunday.toISOString());
-  const completedDays = new Set((data as { completed_at: string }[] | null)?.map((r) => new Date(r.completed_at).toISOString().slice(0, 10)) ?? []);
+    .gte('completed_at', startLocal.toISOString())
+    .lte('completed_at', endLocal.toISOString());
+  const completedDays = new Set((data as { completed_at: string }[] | null)?.map((r) => dayKeyOfTimestamp(r.completed_at)) ?? []);
 
-  return { monday, todayIdx, completedDays };
+  // D-30: adherence counts sessions, not distinct days — in a rotating PPL a
+  // missed session can be made up on a day that already had one.
+  const completedSessions = (data as unknown[] | null)?.length ?? 0;
+  return { keys, todayIdx, completedDays, completedSessions };
+}
+
+export async function countCompletedSessionsThisWeek(): Promise<number> {
+  return (await getWeekSessionDays()).completedSessions;
 }
 
 async function computeWeekDays(): Promise<ProgressData['weekDays']> {
-  const { monday, todayIdx, completedDays } = await getWeekSessionDays();
+  const { keys, todayIdx, completedDays } = await getWeekSessionDays();
 
   return DAY_LETTERS.map((letter, i) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    const dateStr = date.toISOString().slice(0, 10);
     const isToday = i === todayIdx;
     const isFuture = i > todayIdx;
-    const status: ProgressData['weekDays'][number]['status'] = completedDays.has(dateStr)
+    const status: ProgressData['weekDays'][number]['status'] = completedDays.has(keys[i])
       ? 'completed'
       : isToday
         ? 'today'
@@ -280,13 +278,11 @@ async function computeWeekDays(): Promise<ProgressData['weekDays']> {
 // so days without a session are shown as 'rest' (past) or 'scheduled'
 // (future) rather than guessing which ones were meant to be training days.
 export async function computeDashboardWeekStatus(): Promise<WeeklyDayStatus[]> {
-  const { monday, todayIdx, completedDays } = await getWeekSessionDays();
+  const { keys, todayIdx, completedDays } = await getWeekSessionDays();
 
   return DAY_LETTERS.map((dayLetter, i) => {
-    const date = new Date(monday);
-    date.setDate(monday.getDate() + i);
-    const dateStr = date.toISOString().slice(0, 10);
-    const dayNumber = date.getDate();
+    const dateStr = keys[i];
+    const dayNumber = Number(dateStr.slice(8, 10));
     const isCompleted = completedDays.has(dateStr);
     const isToday = i === todayIdx;
     const isFuture = i > todayIdx;
@@ -342,7 +338,7 @@ export async function computeProgressData(userId: string, timeframe: ProgressDat
   const leanMassGain = leanMassMonthlyGainKg(ffmSeries(profile, allWeighIns, allMeasurements));
 
   const targetDaysPerWeek = profile.days_per_week ?? 4;
-  const completedThisWeek = weekDays.filter((d) => d.status === 'completed').length;
+  const completedThisWeek = await countCompletedSessionsThisWeek();
 
   return {
     timeframe,

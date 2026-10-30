@@ -3,19 +3,30 @@ import { mockProgressByTimeframe } from '../data/mockProgress';
 import { insforge } from '../lib/insforge';
 import { upsertByDate } from './dbHelpers';
 import { computeProgressData } from './metricsService';
+import { todayKey } from './dateKeys';
 
 export interface ProgressService {
   getProgress(timeframe?: '7d' | '30d' | '90d' | 'all'): Promise<ProgressData>;
   saveCheckin(data: CheckinSubmission): Promise<{ success: boolean; timestamp: string }>;
+  clearUserState(): void;
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => todayKey();
 
 class MockProgressService implements ProgressService {
   // Only a fallback for the brief window before onboarding writes the first
   // weigh-in/measurement (App.tsx already gates the app behind onboarding).
   private progressMap = { ...mockProgressByTimeframe };
   private checkinKey = 'futurepro_checkin_history';
+
+  clearUserState(): void {
+    this.progressMap = { ...mockProgressByTimeframe };
+    try {
+      localStorage.removeItem(this.checkinKey);
+    } catch {
+      // safe fallback
+    }
+  }
 
   async getProgress(timeframe: '7d' | '30d' | '90d' | 'all' = '30d'): Promise<ProgressData> {
     const { data: authData } = await insforge.auth.getCurrentUser();

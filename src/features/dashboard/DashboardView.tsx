@@ -1,4 +1,6 @@
 import React from 'react';
+import { localIsoDate } from '../../engine/ppl/week';
+import { FEATURES } from '../../config/features';
 import { UserProfile, RecompMetrics, TrendDirectionOrNull, WeeklyDayStatus, Workout } from '../../types';
 
 const WEEKDAYS_ES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -44,6 +46,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectDiscipline,
   onAddProtein
 }) => {
+  // D-23: the hero card shows the next pending session, which may not be today's.
+  const todayIso = localIsoDate(new Date());
+  const todayLabel =
+    !todaysWorkout.scheduledDate || todaysWorkout.scheduledDate === todayIso
+      ? 'Tu entrenamiento de hoy'
+      : `Próximo entrenamiento · ${new Date(`${todaysWorkout.scheduledDate}T12:00:00`).toLocaleDateString('es', { weekday: 'long', day: 'numeric' })}`;
   const proteinPercent = Math.min(
     100,
     Math.round((user.proteinGoal.currentGrams / user.proteinGoal.targetGrams) * 100)
@@ -64,129 +72,133 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </p>
       </section>
 
-      {/* Recomposición Corporal: Metrics & Body Composition Panel */}
-      <section className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[12px] text-[#45474a] uppercase tracking-widest font-bold">
-            Recomposición Corporal
-          </h3>
-          <button
-            type="button"
-            onClick={onViewProgressDetails}
-            className="text-[12px] text-[#274ed5] font-bold flex items-center gap-0.5 active:opacity-75 transition-opacity cursor-pointer"
-          >
-            Detalles <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-          </button>
-        </div>
-
-        {/* Bento Grid of Biometric Metrics */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Peso Actual Card */}
-          <div className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#45474a]">
-              <span className="text-[12px] font-semibold">Peso actual</span>
-              <span className="material-symbols-outlined text-[18px]">scale</span>
-            </div>
-            <div className="my-2.5">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[28px] font-bold text-black tracking-tight font-sans">
-                  {metrics.currentWeightKg.toFixed(1)}
-                </span>
-                <span className="text-[14px] text-[#45474a] font-medium">kg</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {metrics.weightDeltaWeekly != null ? (
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#edeef0] text-[10px] font-bold text-[#389548]">
-                  <span className="material-symbols-outlined text-[12px]">{trendIcon(metrics.weightTrendDirection)}</span>{' '}
-                  {metrics.weightDeltaWeekly > 0 ? '+' : ''}
-                  {metrics.weightDeltaWeekly.toFixed(1)} kg
-                </span>
-              ) : (
-                <span className="text-[10px] text-[#45474a]">Sin datos suficientes aún</span>
-              )}
-              {metrics.weightDeltaWeekly != null && <span className="text-[10px] text-[#45474a]">vs sem. pasada</span>}
-            </div>
+      {FEATURES.recomposition && (
+        <>
+        {/* Recomposición Corporal: Metrics & Body Composition Panel */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-[12px] text-[#45474a] uppercase tracking-widest font-bold">
+              Recomposición Corporal
+            </h3>
+            <button
+              type="button"
+              onClick={onViewProgressDetails}
+              className="text-[12px] text-[#274ed5] font-bold flex items-center gap-0.5 active:opacity-75 transition-opacity cursor-pointer"
+            >
+              Detalles <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+            </button>
           </div>
-
-          {/* Cintura Card */}
-          <div className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col justify-between">
-            <div className="flex items-center justify-between text-[#45474a]">
-              <span className="text-[12px] font-semibold">Cintura</span>
-              <span className="material-symbols-outlined text-[18px]">straighten</span>
-            </div>
-            <div className="my-2.5">
-              <div className="flex items-baseline gap-1">
-                <span className="text-[28px] font-bold text-black tracking-tight font-sans">
-                  {metrics.currentWaistCm.toFixed(1)}
-                </span>
-                <span className="text-[14px] text-[#45474a] font-medium">cm</span>
+  
+          {/* Bento Grid of Biometric Metrics */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Peso Actual Card */}
+            <div className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[#45474a]">
+                <span className="text-[12px] font-semibold">Peso actual</span>
+                <span className="material-symbols-outlined text-[18px]">scale</span>
               </div>
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {metrics.waistDeltaNet != null ? (
-                <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#edeef0] text-[10px] font-bold text-[#389548]">
-                  <span className="material-symbols-outlined text-[12px]">{trendIcon(metrics.waistTrendDirection)}</span>{' '}
-                  {metrics.waistDeltaNet > 0 ? '+' : ''}
-                  {metrics.waistDeltaNet.toFixed(1)} cm
-                </span>
-              ) : (
-                <span className="text-[10px] text-[#45474a]">Sin datos suficientes aún</span>
-              )}
-              {metrics.waistDeltaNet != null && <span className="text-[10px] text-[#45474a]">reducción neta</span>}
-            </div>
-          </div>
-
-          {/* Strength Index Card (Full Width in Grid) */}
-          <div className="col-span-2 bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-full bg-[#edeef0] flex items-center justify-center text-black">
-                  <span className="material-symbols-outlined text-[16px]">fitness_center</span>
+              <div className="my-2.5">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[28px] font-bold text-black tracking-tight font-sans">
+                    {metrics.currentWeightKg.toFixed(1)}
+                  </span>
+                  <span className="text-[14px] text-[#45474a] font-medium">kg</span>
                 </div>
-                <span className="text-[12px] font-bold text-black">
-                  Índice de Fuerza & Masa Magra
-                </span>
               </div>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#274ed5]/10 text-[#274ed5] text-[10px] font-bold">
-                {metrics.strengthIndexMonthlyDelta != null
-                  ? `${metrics.strengthIndexMonthlyDelta > 0 ? '+' : ''}${metrics.strengthIndexMonthlyDelta}% este mes`
-                  : 'Sin datos suficientes'}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {metrics.weightDeltaWeekly != null ? (
+                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#edeef0] text-[10px] font-bold text-[#389548]">
+                    <span className="material-symbols-outlined text-[12px]">{trendIcon(metrics.weightTrendDirection)}</span>{' '}
+                    {metrics.weightDeltaWeekly > 0 ? '+' : ''}
+                    {metrics.weightDeltaWeekly.toFixed(1)} kg
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[#45474a]">Sin datos suficientes aún</span>
+                )}
+                {metrics.weightDeltaWeekly != null && <span className="text-[10px] text-[#45474a]">vs sem. pasada</span>}
+              </div>
             </div>
-
-            {/* Clean Composition Segment Bars */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex justify-between text-[10px] text-[#45474a] font-medium">
-                <span>Composición: Masa Muscular Est. ({metrics.estimatedLeanMassKg} kg)</span>
-                <span className="text-black font-bold">{metrics.leanMassPercent}%</span>
+  
+            {/* Cintura Card */}
+            <div className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-[#45474a]">
+                <span className="text-[12px] font-semibold">Cintura</span>
+                <span className="material-symbols-outlined text-[18px]">straighten</span>
               </div>
-              <div className="h-2 w-full bg-[#edeef0] rounded-full overflow-hidden flex">
-                <div
-                  className="h-full bg-black rounded-full transition-all duration-500"
-                  style={{ width: `${metrics.leanMassPercent}%` }}
-                ></div>
-                <div
-                  className="h-full bg-[#c5c6ca]/50 rounded-r-full"
-                  style={{ width: `${100 - metrics.leanMassPercent}%` }}
-                ></div>
+              <div className="my-2.5">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-[28px] font-bold text-black tracking-tight font-sans">
+                    {metrics.currentWaistCm.toFixed(1)}
+                  </span>
+                  <span className="text-[14px] text-[#45474a] font-medium">cm</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center text-[10px] text-[#45474a] pt-0.5 flex-wrap gap-1">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-black inline-block"></span> Músculo magro (
-                  {metrics.leanMassMonthlyGainKg != null
-                    ? `${metrics.leanMassMonthlyGainKg > 0 ? '+' : ''}${metrics.leanMassMonthlyGainKg} kg/mes`
-                    : 'sin datos suficientes'}
-                  )
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {metrics.waistDeltaNet != null ? (
+                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#edeef0] text-[10px] font-bold text-[#389548]">
+                    <span className="material-symbols-outlined text-[12px]">{trendIcon(metrics.waistTrendDirection)}</span>{' '}
+                    {metrics.waistDeltaNet > 0 ? '+' : ''}
+                    {metrics.waistDeltaNet.toFixed(1)} cm
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-[#45474a]">Sin datos suficientes aún</span>
+                )}
+                {metrics.waistDeltaNet != null && <span className="text-[10px] text-[#45474a]">reducción neta</span>}
+              </div>
+            </div>
+  
+            {/* Strength Index Card (Full Width in Grid) */}
+            <div className="col-span-2 bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#edeef0] flex items-center justify-center text-black">
+                    <span className="material-symbols-outlined text-[16px]">fitness_center</span>
+                  </div>
+                  <span className="text-[12px] font-bold text-black">
+                    Índice de Fuerza & Masa Magra
+                  </span>
+                </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#274ed5]/10 text-[#274ed5] text-[10px] font-bold">
+                  {metrics.strengthIndexMonthlyDelta != null
+                    ? `${metrics.strengthIndexMonthlyDelta > 0 ? '+' : ''}${metrics.strengthIndexMonthlyDelta}% este mes`
+                    : 'Sin datos suficientes'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#c5c6ca] inline-block"></span> Grasa corporal: {metrics.bodyFatPercent}%
-                </span>
+              </div>
+  
+              {/* Clean Composition Segment Bars */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex justify-between text-[10px] text-[#45474a] font-medium">
+                  <span>Composición: Masa Muscular Est. ({metrics.estimatedLeanMassKg} kg)</span>
+                  <span className="text-black font-bold">{metrics.leanMassPercent}%</span>
+                </div>
+                <div className="h-2 w-full bg-[#edeef0] rounded-full overflow-hidden flex">
+                  <div
+                    className="h-full bg-black rounded-full transition-all duration-500"
+                    style={{ width: `${metrics.leanMassPercent}%` }}
+                  ></div>
+                  <div
+                    className="h-full bg-[#c5c6ca]/50 rounded-r-full"
+                    style={{ width: `${100 - metrics.leanMassPercent}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between items-center text-[10px] text-[#45474a] pt-0.5 flex-wrap gap-1">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-black inline-block"></span> Músculo magro (
+                    {metrics.leanMassMonthlyGainKg != null
+                      ? `${metrics.leanMassMonthlyGainKg > 0 ? '+' : ''}${metrics.leanMassMonthlyGainKg} kg/mes`
+                      : 'sin datos suficientes'}
+                    )
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-[#c5c6ca] inline-block"></span> Grasa corporal: {metrics.bodyFatPercent}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+        </>
+      )}
 
       {/* Weekly Progress Micro-Tracker (Tu semana) */}
       <section className="flex flex-col gap-2.5">
@@ -242,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Hero Workout Card (Tu entrenamiento de hoy) */}
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
-          <h3 className="text-[17px] text-black font-bold font-sans">Tu entrenamiento de hoy</h3>
+          <h3 className="text-[17px] text-black font-bold font-sans">{todayLabel}</h3>
           <span className="text-[10px] bg-black text-white px-2.5 py-0.5 rounded-full font-bold">
             {todaysWorkout.categoryTag}
           </span>
@@ -300,16 +312,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Discipline Category Carousel (Categorías rápidas) */}
       <section className="bg-[#f3f4f6] rounded-[24px] p-4 border border-[#c5c6ca]/20 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-[18px] text-black font-bold">Más disciplinas</h3>
+          <h3 className="text-[18px] text-black font-bold">Ejercicios por zona</h3>
           <span className="text-[10px] text-[#45474a] font-semibold">Explorar catálogo</span>
         </div>
         <div className="flex items-center justify-between overflow-x-auto no-scrollbar py-1 gap-2">
           {[
-            { label: 'Fuerza', icon: 'fitness_center' },
-            { label: 'Hipertrofia', icon: 'exercise' },
-            { label: 'Movilidad', icon: 'self_improvement' },
-            { label: 'Calistenia', icon: 'sports_gymnastics' },
-            { label: 'Core', icon: 'accessibility_new' }
+            // Must match ExerciseCatalogModal's body-part categories (D-32).
+            { label: 'Pecho', icon: 'fitness_center' },
+            { label: 'Espalda', icon: 'rowing' },
+            { label: 'Hombros', icon: 'sports_gymnastics' },
+            { label: 'Pierna', icon: 'directions_run' },
+            { label: 'Abdomen/Core', icon: 'accessibility_new' }
           ].map((item) => (
             <button
               key={item.label}
@@ -326,28 +339,32 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </section>
 
-      {/* Daily Habit / Macro Nutrition Quick Check */}
-      <section className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#edeef0] flex items-center justify-center text-black font-bold shrink-0">
-            <span className="material-symbols-outlined text-[20px]">restaurant</span>
+      {FEATURES.recomposition && (
+        <>
+        {/* Daily Habit / Macro Nutrition Quick Check */}
+        <section className="bg-white rounded-[24px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#edeef0] flex items-center justify-center text-black font-bold shrink-0">
+              <span className="material-symbols-outlined text-[20px]">restaurant</span>
+            </div>
+            <div>
+              <h4 className="text-[12px] text-black font-bold">Objetivo Proteico Diario</h4>
+              <p className="text-[13px] text-[#45474a]">
+                {user.proteinGoal.currentGrams}g consumidos de {user.proteinGoal.targetGrams}g ({proteinPercent}%)
+              </p>
+            </div>
           </div>
-          <div>
-            <h4 className="text-[12px] text-black font-bold">Objetivo Proteico Diario</h4>
-            <p className="text-[13px] text-[#45474a]">
-              {user.proteinGoal.currentGrams}g consumidos de {user.proteinGoal.targetGrams}g ({proteinPercent}%)
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onAddProtein}
-          title="Añadir proteína (+25g)"
-          className="w-8 h-8 rounded-full border border-[#c5c6ca]/40 flex items-center justify-center text-black active:scale-90 transition-transform cursor-pointer hover:bg-[#edeef0]"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-        </button>
-      </section>
+          <button
+            type="button"
+            onClick={onAddProtein}
+            title="Añadir proteína (+25g)"
+            className="w-8 h-8 rounded-full border border-[#c5c6ca]/40 flex items-center justify-center text-black active:scale-90 transition-transform cursor-pointer hover:bg-[#edeef0]"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+          </button>
+        </section>
+        </>
+      )}
     </main>
   );
 };

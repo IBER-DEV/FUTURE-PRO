@@ -8,7 +8,7 @@ export const mockUser: UserProfile = {
   avatarAnimal: null,
   avatarPhotoUrl: null,
   currentGoal: 'recomp',
-  goalLabel: 'Recomposición corporal',
+  goalLabel: 'Push / Pull / Legs — sobrecarga progresiva',
   proteinGoal: {
     currentGrams: 0,
     targetGrams: 170

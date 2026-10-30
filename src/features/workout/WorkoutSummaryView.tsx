@@ -1,4 +1,12 @@
 import React from 'react';
+
+// completedAt is an ISO timestamp; older cached summaries may still hold free text.
+const formatCompletedAt = (value: string): string => {
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? value
+    : d.toLocaleString('es', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
 import { WorkoutSummaryRecord } from '../../types';
 
 interface WorkoutSummaryViewProps {
@@ -47,7 +55,7 @@ export const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({
             {summary.workoutTitle}
           </h1>
           <p className="text-[14px] text-[#45474a] font-medium">
-            {summary.phaseLabel} • Completado {summary.completedAt}
+            {summary.phaseLabel} • Completado {formatCompletedAt(summary.completedAt)}
           </p>
         </section>
 
@@ -85,7 +93,6 @@ export const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({
               </span>
               <span className="text-[14px] text-[#45474a] ml-1 font-medium">min</span>
             </div>
-            <span className="text-[10px] text-[#45474a]">Óptimo para hipertrofia</span>
           </div>
 
           {/* Series Efectivas Card */}

@@ -9,7 +9,7 @@ import { userService } from './services/userService';
 import { workoutService } from './services/workoutService';
 import { progressService } from './services/progressService';
 import { profileService, ProfileUpdate } from './services/profileService';
-import { computeDashboardWeekStatus } from './services/metricsService';
+import { computeDashboardWeekStatus, countCompletedSessionsThisWeek } from './services/metricsService';
 import { useAuth } from './contexts/AuthContext';
 import { AuthView } from './features/auth/AuthView';
 import { OnboardingSetupView } from './features/onboarding/OnboardingSetupView';
@@ -33,6 +33,8 @@ import { ProfileView } from './features/profile/ProfileView';
 // Modals
 import { ExerciseCatalogModal } from './features/exercises/ExerciseCatalogModal';
 import { WeeklyCheckinModal } from './features/progress/WeeklyCheckinModal';
+
+const OWNER_KEY = 'futurepro_cache_owner';
 
 export default function App() {
   // Auth / onboarding gate
@@ -60,11 +62,38 @@ export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [metrics, setMetrics] = useState<RecompMetrics | null>(null);
   const [weekStatus, setWeekStatus] = useState<WeeklyDayStatus[]>([]);
+  const [weekSessionsDone, setWeekSessionsDone] = useState(0);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [planWorkouts, setPlanWorkouts] = useState<Workout[]>([]);
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
   const [progressTimeframe, setProgressTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [summaryData, setSummaryData] = useState<WorkoutSummaryRecord | null>(null);
+
+  // A failed load must surface an error with a retry, never an endless spinner.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const failLoad = (err: unknown) => {
+    console.error(err);
+    setLoadError('No pudimos cargar tus datos. Revisa tu conexión e inténtalo de nuevo.');
+  };
+
+  // Per-device caches (plan, summary, user, metrics, check-ins) belong to one
+  // account: wipe them, and the in-memory view state, whenever the account changes.
+  const clearSessionState = () => {
+    workoutService.clearUserState();
+    userService.clearUserState();
+    progressService.clearUserState();
+    setUser(null);
+    setMetrics(null);
+    setWeekStatus([]);
+    setWeekSessionsDone(0);
+    setActiveWorkout(null);
+    setPlanWorkouts([]);
+    setProgressData(null);
+    setSummaryData(null);
+    setActiveFlow('none');
+    setCurrentTab('inicio');
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -79,8 +108,18 @@ export default function App() {
       setDbProfile(undefined);
       return;
     }
-    profileService.getProfile(authUser.id).then(setDbProfile);
-  }, [authUser]);
+    try {
+      if (localStorage.getItem(OWNER_KEY) !== authUser.id) {
+        clearSessionState();
+        localStorage.setItem(OWNER_KEY, authUser.id);
+      }
+    } catch {
+      clearSessionState();
+    }
+    setLoadError(null);
+    profileService.getProfile(authUser.id).then(setDbProfile).catch(failLoad);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser, reloadKey]);
 
   const handleOnboardingComplete = async (input: OnboardingInput) => {
     if (!authUser) return;
@@ -91,12 +130,20 @@ export default function App() {
 
   const handleSignOut = async () => {
     await signOut();
+    clearSessionState();
+    try {
+      localStorage.removeItem(OWNER_KEY);
+    } catch {
+      // nothing stored
+    }
     setDbProfile(undefined);
   };
 
   const handleUpdateProfile = async (update: ProfileUpdate) => {
     if (!authUser) return;
     const updated = await profileService.updateProfile(authUser.id, update);
+    // Days/minutes/equipment shape the weekly plan: rebuild it from the new profile.
+    workoutService.invalidatePlan();
     setDbProfile(updated);
     setIsEditProfileOpen(false);
     showToast('Datos actualizados');
@@ -105,19 +152,23 @@ export default function App() {
   // Initial Data Loading — only once the user is authenticated and onboarded
   useEffect(() => {
     if (!authUser || !dbProfile) return;
-    userService.getCurrentUser().then(setUser);
-    userService.getRecompMetrics().then(setMetrics);
-    workoutService.getWorkout().then(setActiveWorkout);
-    workoutService.getWorkoutPlan().then(setPlanWorkouts);
-    workoutService.getLatestSummary().then(setSummaryData);
-    progressService.getProgress(progressTimeframe).then(setProgressData);
-    computeDashboardWeekStatus().then(setWeekStatus);
+    setLoadError(null);
+    userService.getCurrentUser().then(setUser).catch(failLoad);
+    userService.getRecompMetrics().then(setMetrics).catch(failLoad);
+    workoutService.getWorkout().then(setActiveWorkout).catch(failLoad);
+    workoutService.getWorkoutPlan().then(setPlanWorkouts).catch(failLoad);
+    workoutService.getLatestSummary().then(setSummaryData).catch(failLoad);
+    progressService.getProgress(progressTimeframe).then(setProgressData).catch(failLoad);
+    computeDashboardWeekStatus().then(setWeekStatus).catch(failLoad);
+    countCompletedSessionsThisWeek().then(setWeekSessionsDone).catch(failLoad);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authUser, dbProfile]);
+  }, [authUser, dbProfile, reloadKey]);
 
   // Update Progress when timeframe changes
   useEffect(() => {
-    progressService.getProgress(progressTimeframe).then(setProgressData);
+    if (!authUser || !dbProfile) return;
+    progressService.getProgress(progressTimeframe).then(setProgressData).catch(failLoad);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressTimeframe]);
 
   // Handler: Add Protein
@@ -142,6 +193,14 @@ export default function App() {
     if (activeWorkout) {
       const summary = await workoutService.completeWorkout(activeWorkout.id, durationMinutes);
       setSummaryData(summary);
+      // D-28: the plan (completed flag), today's session, week tracker and
+      // adherence all change once a session is closed — reload them now, not
+      // only on the next app start.
+      workoutService.getWorkoutPlan().then(setPlanWorkouts).catch(failLoad);
+      workoutService.getWorkout().then(setActiveWorkout).catch(failLoad);
+      computeDashboardWeekStatus().then(setWeekStatus).catch(failLoad);
+    countCompletedSessionsThisWeek().then(setWeekSessionsDone).catch(failLoad);
+      progressService.getProgress(progressTimeframe).then(setProgressData).catch(failLoad);
       setActiveFlow('workout_summary');
       showToast('¡Entrenamiento completado con éxito!');
     }
@@ -175,6 +234,30 @@ export default function App() {
 
   if (!authUser) {
     return <AuthView />;
+  }
+
+  if (loadError) {
+    return (
+      <div role="alert" className="w-full min-h-screen bg-[#f8f9fb] flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-sm font-semibold text-[#191c1e] max-w-xs">{loadError}</p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            className="px-5 py-2.5 rounded-full bg-black text-white font-bold text-xs cursor-pointer"
+          >
+            Reintentar
+          </button>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="px-5 py-2.5 rounded-full bg-[#edeef0] text-black font-bold text-xs cursor-pointer"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (dbProfile === undefined) {
@@ -262,7 +345,7 @@ export default function App() {
               user={user}
               metrics={metrics}
               weekStatus={weekStatus}
-              weeklyCompletedCount={weekStatus.filter((d) => d.status === 'completed').length}
+              weeklyCompletedCount={weekSessionsDone}
               weeklyTargetDays={dbProfile.days_per_week ?? 4}
               todaysWorkout={activeWorkout}
               onStartWorkout={() => setActiveFlow('workout')}

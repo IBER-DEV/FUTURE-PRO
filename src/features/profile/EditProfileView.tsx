@@ -120,7 +120,7 @@ export const EditProfileView: React.FC<EditProfileViewProps> = ({ profile, onSav
             <Field label="Días por semana">
               <input
                 type="number"
-                min={2}
+                min={3}
                 max={6}
                 required
                 className={inputClass}

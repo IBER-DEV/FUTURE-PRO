@@ -1,5 +1,16 @@
 import React from 'react';
 import { Workout } from '../../types';
+import { localIsoDate } from '../../engine/ppl/week';
+
+const WEEKDAY_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MONTH_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+// 'YYYY-MM-DD' → 'Lun 26 oct' (parsed as a calendar date, no timezone shift).
+const formatDay = (isoDate: string): string => {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return `${WEEKDAY_ES[date.getDay()]} ${d} ${MONTH_ES[m - 1]}`;
+};
 
 interface PlanViewProps {
   planWorkouts: Workout[];
@@ -12,18 +23,28 @@ export const PlanView: React.FC<PlanViewProps> = ({
   onStartWorkout,
   onOpenExerciseCatalog
 }) => {
+  const today = localIsoDate(new Date());
+  const weekNumber = planWorkouts[0]?.weekNumber;
+  const weekStart = planWorkouts[0]?.weekStart;
+  // Highlight today's session, or the next one still pending this week.
+  const highlightedId = (
+    planWorkouts.find((w) => w.scheduledDate === today) ??
+    planWorkouts.find((w) => !w.completed && (w.scheduledDate ?? '') >= today)
+  )?.id;
+
   return (
     <main className="px-4 flex flex-col gap-6 pt-2 pb-28">
       {/* Editorial Title Section */}
       <section className="flex flex-col pt-1">
         <span className="text-[12px] font-bold text-[#45474a] uppercase tracking-wider">
-          Plan generado según tu perfil
+          {weekNumber ? `Semana ${weekNumber} · Push / Pull / Legs` : 'Push / Pull / Legs'}
         </span>
         <h1 className="text-[34px] font-serif-hero text-black tracking-tight leading-[40px] mt-1">
-          Plan de Entrenamiento
+          Tu semana
         </h1>
         <p className="text-[13px] text-[#45474a] font-medium mt-1">
-          {planWorkouts.length} sesiones semanales
+          {planWorkouts.length} sesiones{weekStart ? ` · desde el ${formatDay(weekStart)}` : ''}. Los ejercicios se
+          mantienen; la carga y las repeticiones suben según lo que registres.
         </p>
       </section>
 
@@ -49,13 +70,15 @@ export const PlanView: React.FC<PlanViewProps> = ({
           </h2>
         </div>
 
-        {planWorkouts.map((workout, index) => {
-          const isToday = index === 0;
+        {planWorkouts.map((workout) => {
+          const isToday = workout.scheduledDate === today;
+          const isHighlighted = workout.id === highlightedId;
+          const isPast = !!workout.scheduledDate && workout.scheduledDate < today;
           return (
             <div
               key={workout.id}
               className={`rounded-[28px] overflow-hidden bg-white border transition-all duration-200 ${
-                isToday
+                isHighlighted
                   ? 'border-2 border-black soft-card-shadow'
                   : 'border-[#c5c6ca]/20 shadow-sm'
               }`}
@@ -69,8 +92,13 @@ export const PlanView: React.FC<PlanViewProps> = ({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
                 <div className="absolute top-3 left-3 flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md text-black font-bold text-[10px] uppercase">
-                    {workout.focus}
+                  {workout.scheduledDate && (
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/90 backdrop-blur-md text-black font-bold text-[10px] uppercase">
+                      {formatDay(workout.scheduledDate)}
+                    </span>
+                  )}
+                  <span className="px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-md text-black font-bold text-[10px] uppercase">
+                    {workout.categoryTag}
                   </span>
                   {isToday && (
                     <span className="px-2.5 py-0.5 rounded-full bg-black text-white font-bold text-[10px] uppercase border border-white/30">
@@ -81,24 +109,28 @@ export const PlanView: React.FC<PlanViewProps> = ({
                 <div className="absolute bottom-3 left-4 right-4 text-white">
                   <h3 className="text-[18px] font-bold">{workout.title}</h3>
                   <p className="text-[11px] text-white/80">
-                    {workout.durationMinutes} min • {workout.exercisesCount} ejercicios • {workout.rirRange}
+                    {workout.focus} • ~{workout.durationMinutes} min • {workout.exercisesCount} ejercicios • {workout.rirRange}
                   </p>
                 </div>
               </div>
 
               <div className="p-4 flex items-center justify-between bg-white">
                 <div className="text-xs text-[#45474a]">
-                  {isToday ? (
+                  {workout.completed ? (
+                    <span className="text-[#1b6d24] font-bold">✓ Completada</span>
+                  ) : isToday ? (
                     <span className="text-[#274ed5] font-bold">● Sesión lista para comenzar</span>
+                  ) : isPast ? (
+                    <span>Pendiente de esta semana</span>
                   ) : (
-                    <span>Programada para esta semana</span>
+                    <span>Programada</span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => onStartWorkout(workout)}
                   className={`px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer ${
-                    isToday
+                    isHighlighted
                       ? 'bg-black text-white shadow-md hover:bg-neutral-800'
                       : 'bg-[#edeef0] text-black hover:bg-[#e1e2e4]'
                   }`}

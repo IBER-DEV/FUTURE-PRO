@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { FEATURES } from '../../config/features';
 import { UserProfile, RecompMetrics } from '../../types';
 import { Profile } from '../../types/profile';
 import { PWAInstallButton } from '../../components/common/PWAInstallButton';
@@ -106,69 +107,73 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </section>
 
-      {/* Biometrics Management */}
-      <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-[#45474a]">
-            Medidas Registradas
-          </h3>
-          <button
-            type="button"
-            onClick={() => setIsEditingMetrics(!isEditingMetrics)}
-            className="text-xs font-bold text-[#274ed5] cursor-pointer"
-          >
-            {isEditingMetrics ? 'Cancelar' : 'Editar medidas'}
-          </button>
-        </div>
-
-        {isEditingMetrics ? (
-          <form onSubmit={handleSaveMetrics} className="space-y-3 pt-1">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] text-[#45474a] font-semibold block mb-1">
-                  Peso actual (kg)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={weightInput}
-                  onChange={(e) => setWeightInput(e.target.value)}
-                  className="w-full h-10 px-3 bg-[#f3f4f6] rounded-xl font-bold text-black text-sm outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-[#45474a] font-semibold block mb-1">
-                  Cintura (cm)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={waistInput}
-                  onChange={(e) => setWaistInput(e.target.value)}
-                  className="w-full h-10 px-3 bg-[#f3f4f6] rounded-xl font-bold text-black text-sm outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-            </div>
+      {FEATURES.recomposition && (
+        <>
+        {/* Biometrics Management */}
+        <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#45474a]">
+              Medidas Registradas
+            </h3>
             <button
-              type="submit"
-              className="w-full py-2.5 rounded-full bg-black text-white text-xs font-bold cursor-pointer hover:bg-neutral-800"
+              type="button"
+              onClick={() => setIsEditingMetrics(!isEditingMetrics)}
+              className="text-xs font-bold text-[#274ed5] cursor-pointer"
             >
-              Guardar nuevas medidas
+              {isEditingMetrics ? 'Cancelar' : 'Editar medidas'}
             </button>
-          </form>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-[#f8f9fb] rounded-2xl">
-              <span className="text-[10px] text-[#45474a] font-semibold uppercase">Peso</span>
-              <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWeightKg} kg</p>
-            </div>
-            <div className="p-3 bg-[#f8f9fb] rounded-2xl">
-              <span className="text-[10px] text-[#45474a] font-semibold uppercase">Cintura</span>
-              <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWaistCm} cm</p>
-            </div>
           </div>
-        )}
-      </section>
+  
+          {isEditingMetrics ? (
+            <form onSubmit={handleSaveMetrics} className="space-y-3 pt-1">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[11px] text-[#45474a] font-semibold block mb-1">
+                    Peso actual (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={weightInput}
+                    onChange={(e) => setWeightInput(e.target.value)}
+                    className="w-full h-10 px-3 bg-[#f3f4f6] rounded-xl font-bold text-black text-sm outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] text-[#45474a] font-semibold block mb-1">
+                    Cintura (cm)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={waistInput}
+                    onChange={(e) => setWaistInput(e.target.value)}
+                    className="w-full h-10 px-3 bg-[#f3f4f6] rounded-xl font-bold text-black text-sm outline-none focus:ring-2 focus:ring-black"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-full bg-black text-white text-xs font-bold cursor-pointer hover:bg-neutral-800"
+              >
+                Guardar nuevas medidas
+              </button>
+            </form>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div className="p-3 bg-[#f8f9fb] rounded-2xl">
+                <span className="text-[10px] text-[#45474a] font-semibold uppercase">Peso</span>
+                <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWeightKg} kg</p>
+              </div>
+              <div className="p-3 bg-[#f8f9fb] rounded-2xl">
+                <span className="text-[10px] text-[#45474a] font-semibold uppercase">Cintura</span>
+                <p className="text-lg font-bold text-black mt-0.5">{metrics.currentWaistCm} cm</p>
+              </div>
+            </div>
+          )}
+        </section>
+        </>
+      )}
 
       {/* PWA App Installation & Offline Settings */}
       <section className="bg-white rounded-[28px] p-5 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col gap-3">

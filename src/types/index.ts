@@ -92,6 +92,11 @@ export interface Workout {
   coverImage: string;
   exercises: WorkoutExerciseItem[];
   completed?: boolean;
+  // Weekly PPL plan (src/engine/ppl) — YYYY-MM-DD dates.
+  scheduledDate?: string;
+  weekStart?: string;
+  weekNumber?: number;
+  dayType?: 'push' | 'pull' | 'legs';
 }
 
 export interface WorkoutSummaryRecord {

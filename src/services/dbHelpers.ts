@@ -21,10 +21,14 @@ export async function upsertByDate(
 
   if (!isConflict(insertError)) throw new Error(insertError.message);
 
-  const { error: updateError } = await insforge.database
+  const { data: updated, error: updateError } = await insforge.database
     .from(table)
     .update(payload)
     .eq('user_id', userId)
-    .eq(dateColumn, dateValue);
+    .eq(dateColumn, dateValue)
+    .select();
   if (updateError) throw new Error(updateError.message);
+  if (!Array.isArray(updated) || updated.length === 0) {
+    throw new Error(`upsertByDate: no row updated in ${table} for ${dateValue}`);
+  }
 }

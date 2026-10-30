@@ -136,7 +136,7 @@ export const OnboardingSetupView: React.FC<OnboardingSetupViewProps> = ({ onComp
         <div className="text-center py-4">
           <h1 className="text-[24px] font-serif-hero text-black tracking-tight">Cuéntanos de ti</h1>
           <p className="text-xs text-[#45474a] font-medium mt-1">
-            Esto arma tu perfil de recomposición. Nada se hardcodea — cada quien responde lo suyo.
+            Con esto armamos tu rutina Push/Pull/Legs semanal. Nada se hardcodea — cada quien responde lo suyo.
           </p>
         </div>
 
@@ -250,7 +250,7 @@ export const OnboardingSetupView: React.FC<OnboardingSetupViewProps> = ({ onComp
               <Field label="Días por semana">
                 <input
                   type="number"
-                  min={2}
+                  min={3}
                   max={6}
                   required
                   className={inputClass}
