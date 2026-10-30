@@ -75,7 +75,7 @@ const insforgeLoggerDb: LoggerDb = {
   async closeSession(sessionId, completedAt, c) {
     const { error } = await insforge.database
       .from('workout_sessions')
-      .update({ completed_at: completedAt, duration_minutes: c.durationMinutes, total_volume_kg: c.totalVolumeKg })
+      .update({ completed_at: completedAt, duration_minutes: c.durationMinutes, total_volume_kg: c.totalVolumeKg, planned_sets: c.plannedSets ?? null })
       .eq('id', sessionId);
     if (error) throw new Error(error.message);
   }
@@ -294,7 +294,7 @@ class RealWorkoutService implements WorkoutService {
     // is kept and the close is queued for retry (already logged by the logger).
     await this.logger.complete(
       workout.id,
-      { durationMinutes: summary.durationMinutes, totalVolumeKg: summary.totalVolumeKg },
+      { durationMinutes: summary.durationMinutes, totalVolumeKg: summary.totalVolumeKg, plannedSets: summary.effectiveSetsTotal },
       summary.completedAt
     );
 

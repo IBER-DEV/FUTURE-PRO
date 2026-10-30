@@ -14,6 +14,7 @@ export interface SetRow {
 
 export interface SessionClose {
   durationMinutes: number;
+  plannedSets?: number | null;
   totalVolumeKg: number;
 }
 

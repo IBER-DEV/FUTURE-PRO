@@ -111,7 +111,8 @@ export interface WorkoutSummaryRecord {
   volumeDeltaPercent?: number;
   durationMinutes: number;
   effectiveSetsCompleted: number;
-  effectiveSetsTotal: number;
+  // Planned sets; null when unknown (sessions logged before planned_sets was stored).
+  effectiveSetsTotal: number | null;
   // Promedio de RIR realmente registrado en la sesión; undefined si ninguna
   // serie tuvo RIR cargado.
   avgRir?: number;

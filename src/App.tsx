@@ -68,6 +68,8 @@ export default function App() {
   const [progressData, setProgressData] = useState<ProgressData | null>(null);
   const [progressTimeframe, setProgressTimeframe] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [summaryData, setSummaryData] = useState<WorkoutSummaryRecord | null>(null);
+  // Summary opened from Progreso → Historial (vs. the one shown right after finishing).
+  const [historySummary, setHistorySummary] = useState<WorkoutSummaryRecord | null>(null);
 
   // A failed load must surface an error with a retry, never an endless spinner.
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -91,6 +93,7 @@ export default function App() {
     setPlanWorkouts([]);
     setProgressData(null);
     setSummaryData(null);
+    setHistorySummary(null);
     setActiveFlow('none');
     setCurrentTab('inicio');
   };
@@ -323,12 +326,15 @@ export default function App() {
         />
       ) : activeFlow === 'workout_summary' ? (
         <WorkoutSummaryView
-          summary={summaryData}
+          summary={historySummary ?? summaryData}
+          continueLabel={historySummary ? 'Volver al progreso' : 'Ver mi progreso'}
           onClose={() => {
+            setHistorySummary(null);
             setActiveFlow('none');
             setCurrentTab('progreso');
           }}
           onContinue={() => {
+            setHistorySummary(null);
             setActiveFlow('none');
             setCurrentTab('progreso');
           }}
@@ -375,6 +381,11 @@ export default function App() {
               currentTimeframe={progressTimeframe}
               onSelectTimeframe={setProgressTimeframe}
               onOpenCheckin={() => setIsCheckinOpen(true)}
+              historyRefreshKey={summaryData.completedAt}
+              onOpenSession={(summary) => {
+                setHistorySummary(summary);
+                setActiveFlow('workout_summary');
+              }}
             />
           )}
 

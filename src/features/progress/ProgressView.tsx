@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FEATURES } from '../../config/features';
-import { ProgressData, TrendDirectionOrNull } from '../../types';
+import { ProgressData, TrendDirectionOrNull, WorkoutSummaryRecord } from '../../types';
+import { WorkoutHistorySection } from './WorkoutHistorySection';
 
 function trendIcon(direction: TrendDirectionOrNull): string {
   if (direction === 'decreasing') return 'trending_down';
@@ -14,13 +15,17 @@ interface ProgressViewProps {
   currentTimeframe: '7d' | '30d' | '90d' | 'all';
   onSelectTimeframe: (tf: '7d' | '30d' | '90d' | 'all') => void;
   onOpenCheckin: () => void;
+  onOpenSession: (summary: WorkoutSummaryRecord) => void;
+  historyRefreshKey?: string;
 }
 
 export const ProgressView: React.FC<ProgressViewProps> = ({
   progressData,
   currentTimeframe,
   onSelectTimeframe,
-  onOpenCheckin
+  onOpenCheckin,
+  onOpenSession,
+  historyRefreshKey
 }) => {
   const [activeMetricTab, setActiveMetricTab] = useState<'both' | 'weight' | 'waist'>('both');
 
@@ -298,6 +303,12 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
         </div>
 
         <div className="bg-white rounded-[28px] p-4 soft-card-shadow border border-[#c5c6ca]/20 flex flex-col divide-y divide-[#c5c6ca]/15">
+          {progressData.strengthHighlights.length === 0 && (
+            <p className="text-[13px] text-[#45474a] leading-relaxed">
+              Aquí verás cuánto sube tu fuerza estimada en los ejercicios principales. Hace falta registrar series durante
+              unas semanas (comparamos tus últimos 14 días con los 14 anteriores) para calcularlo.
+            </p>
+          )}
           {progressData.strengthHighlights.map((hl, idx) => (
             <div
               key={idx}
@@ -366,6 +377,8 @@ export const ProgressView: React.FC<ProgressViewProps> = ({
           ))}
         </div>
       </section>
+
+      <WorkoutHistorySection refreshKey={historyRefreshKey} onOpenSession={onOpenSession} />
 
       {FEATURES.recomposition && (
         <>

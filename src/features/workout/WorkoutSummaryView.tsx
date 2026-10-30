@@ -14,13 +14,15 @@ interface WorkoutSummaryViewProps {
   onClose: () => void;
   onContinue: () => void;
   onShare?: () => void;
+  continueLabel?: string;
 }
 
 export const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({
   summary,
   onClose,
   onContinue,
-  onShare
+  onShare,
+  continueLabel = 'Guardar en historial y continuar'
 }) => {
   return (
     <div className="w-full max-w-[460px] mx-auto min-h-screen bg-[#f8f9fb] flex flex-col relative pb-12">
@@ -105,9 +107,11 @@ export const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({
               <span className="text-[28px] font-bold text-black tracking-tight font-sans">
                 {summary.effectiveSetsCompleted}
               </span>
-              <span className="text-[14px] text-[#45474a] ml-1 font-medium">/ {summary.effectiveSetsTotal}</span>
+              {summary.effectiveSetsTotal != null && (
+                <span className="text-[14px] text-[#45474a] ml-1 font-medium">/ {summary.effectiveSetsTotal}</span>
+              )}
             </div>
-            {summary.effectiveSetsTotal > 0 && (
+            {summary.effectiveSetsTotal != null && summary.effectiveSetsTotal > 0 && (
               <span className="text-[10px] text-[#389548] font-bold">
                 {Math.round((summary.effectiveSetsCompleted / summary.effectiveSetsTotal) * 100)}% de cumplimiento
               </span>
@@ -239,7 +243,7 @@ export const WorkoutSummaryView: React.FC<WorkoutSummaryViewProps> = ({
             onClick={onContinue}
             className="w-full h-14 rounded-full bg-black text-white text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-neutral-800 active:scale-[0.98] transition-all shadow-lg cursor-pointer"
           >
-            Guardar en historial y continuar
+            {continueLabel}
           </button>
         </div>
       </main>

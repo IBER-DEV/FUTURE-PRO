@@ -58,3 +58,71 @@ export function applyCompletedSessions(plan: Workout[], completedTitles: readonl
   const done = new Set(completedTitles);
   return plan.map((w) => (done.has(w.title) && !w.completed ? { ...w, completed: true } : w));
 }
+
+// ---- Workout history (Progreso → Historial) --------------------------------
+
+export interface HistorySessionRow {
+  id: string;
+  title: string;
+  completed_at: string;
+  duration_minutes: number | null;
+  total_volume_kg: number | string | null;
+  planned_sets: number | null;
+}
+
+export interface HistorySetRow {
+  exercise_id: string;
+  exercise_name: string;
+  set_number: number;
+  weight_kg: number | string;
+  reps: number;
+  rir: number | null;
+  set_type: string;
+  completed_at: string | null;
+}
+
+// Rebuilds the end-of-workout summary for a past session from the rows in the
+// backend, so it works on any device and after signing out. Same numbers the
+// live summary shows: volume and RIR from logged sets, planned total only when
+// it was stored (never completed/completed, which would always read 100%).
+export function buildSummaryFromHistory(session: HistorySessionRow, sets: readonly HistorySetRow[]): WorkoutSummaryRecord {
+  const ordered = [...sets].sort((a, b) =>
+    (a.completed_at ?? '') < (b.completed_at ?? '') ? -1 : (a.completed_at ?? '') > (b.completed_at ?? '') ? 1 : a.set_number - b.set_number
+  );
+
+  let totalVol = 0;
+  let rirSum = 0;
+  let rirCount = 0;
+  const byExercise = new Map<string, { name: string; sets: HistorySetRow[] }>();
+  for (const s of ordered) {
+    totalVol += Number(s.weight_kg) * s.reps;
+    if (typeof s.rir === 'number') {
+      rirSum += s.rir;
+      rirCount++;
+    }
+    const entry = byExercise.get(s.exercise_id);
+    if (entry) entry.sets.push(s);
+    else byExercise.set(s.exercise_id, { name: s.exercise_name, sets: [s] });
+  }
+
+  const exerciseBreakdown: WorkoutSummaryRecord['exerciseBreakdown'] = [...byExercise.values()].map(({ name, sets: exSets }) => ({
+    exerciseName: name,
+    icon: 'fitness_center',
+    setsSummary: `${exSets.length} ${exSets.length === 1 ? 'serie' : 'series'} • ${exSets
+      .map((s) => `${Number(s.weight_kg)}×${s.reps}`)
+      .join(', ')}`
+  }));
+
+  return {
+    workoutId: session.id,
+    workoutTitle: session.title,
+    phaseLabel: 'Historial',
+    completedAt: session.completed_at,
+    durationMinutes: session.duration_minutes ?? 0,
+    totalVolumeKg: ordered.length ? totalVol : Number(session.total_volume_kg ?? 0),
+    effectiveSetsCompleted: ordered.length,
+    effectiveSetsTotal: session.planned_sets ?? null,
+    avgRir: rirCount > 0 ? Math.round((rirSum / rirCount) * 10) / 10 : undefined,
+    exerciseBreakdown
+  };
+}
