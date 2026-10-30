@@ -112,3 +112,20 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Auth screen — one authored moment: the rotation headline settles in line by line. */
+.auth-shell ::selection { background: #000; color: #fff; }
+.auth-shell section:first-child ::selection { background: #fff; color: #000; }
+.auth-shell input { caret-color: #000; user-select: text; }
+.auth-title > span {
+  animation: auth-line-in 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.auth-title > span:nth-child(2) { animation-delay: 90ms; }
+.auth-title > span:nth-child(3) { animation-delay: 180ms; }
+@keyframes auth-line-in {
+  from { opacity: 0.001; transform: translateY(0.35em); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-title > span { animation: none; }
+}
