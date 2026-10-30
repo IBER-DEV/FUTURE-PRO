@@ -8,6 +8,9 @@ export interface ExerciseMediaProps {
   className?: string;
   showAnimation?: boolean;
   aspectRatio?: 'video' | 'square' | 'wide';
+  // 'contain' shows the whole demonstration (the dataset GIFs are 180×180 on white);
+  // 'cover' crops to fill, fine for thumbnails.
+  fit?: 'cover' | 'contain';
 }
 
 export const ExerciseMedia: React.FC<ExerciseMediaProps> = ({
@@ -17,7 +20,8 @@ export const ExerciseMedia: React.FC<ExerciseMediaProps> = ({
   altText,
   className = '',
   showAnimation = false,
-  aspectRatio = 'wide'
+  aspectRatio = 'wide',
+  fit = 'cover'
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -58,7 +62,7 @@ export const ExerciseMedia: React.FC<ExerciseMediaProps> = ({
           alt={altText}
           loading="lazy"
           referrerPolicy="no-referrer"
-          className={`w-full h-full object-cover object-center transition-opacity duration-300 ${
+          className={`w-full h-full ${fit === 'contain' ? 'object-contain' : 'object-cover'} object-center transition-opacity duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={() => setLoaded(true)}

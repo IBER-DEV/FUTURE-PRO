@@ -56,6 +56,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
   const [saveSuccessMsg, setSaveSuccessMsg] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [weightError, setWeightError] = useState(false);
+  const [showAllSteps, setShowAllSteps] = useState(false);
 
   // Re-seed the editable draft whenever the active set actually changes
   // (after a save, or after switching exercise) — not on every keystroke.
@@ -151,6 +152,7 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
   };
 
   const goToExercise = (delta: number) => {
+    setShowAllSteps(false);
     setCurrentExIndex((prev) => Math.min(Math.max(prev + delta, 0), workout.exercises.length - 1));
   };
 
@@ -227,73 +229,85 @@ export const LiveWorkoutView: React.FC<LiveWorkoutViewProps> = ({
           </button>
         </div>
 
-        {/* 2. Hero Exercise Visual & Benchmark Context Card */}
-        <section className="w-full rounded-[28px] overflow-hidden bg-white border border-[#c5c6ca]/20 shadow-sm relative">
-          <div className="relative w-full h-48 bg-[#d9dadc] overflow-hidden">
+        {/* 2. How to do it — the demonstration comes first and nothing covers it */}
+        <section aria-labelledby="exercise-title" className="w-full rounded-[28px] overflow-hidden bg-white border border-[#c5c6ca]/20 shadow-sm">
+          <div className="bg-white flex justify-center pt-4">
             <ExerciseMedia
+              key={currentExerciseItem.exercise.id}
               thumbnailUrl={currentExerciseItem.exercise.thumbnail}
               animationUrl={currentExerciseItem.exercise.animation}
-              altText={currentExerciseItem.exercise.name}
-              aspectRatio="video"
+              altText={`Demostración: ${currentExerciseItem.exercise.name}`}
+              aspectRatio="square"
+              fit="contain"
               showAnimation={true}
-              className="h-48"
+              className="w-full max-w-[280px] bg-white"
             />
-            {coachNote && (
-              <div className="absolute top-3 left-3 max-w-[70%] px-2.5 py-1.5 rounded-full bg-white/80 backdrop-blur-xl border border-white/60 flex items-center gap-2 shadow-sm">
-                <span className="text-[10px] uppercase tracking-wide text-black font-semibold truncate">
-                  {coachNote}
-                </span>
+          </div>
+          <p className="px-4 pb-1 text-right text-[10px] text-[#45474a]">© Gym visual — gymvisual.com</p>
+
+          <div className="px-4 pt-2 pb-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 id="exercise-title" className="text-[20px] leading-tight font-extrabold text-black first-letter:uppercase">
+                  {currentExerciseItem.exercise.name}
+                </h2>
+                <p className="text-[13px] text-[#45474a] mt-0.5">
+                  {currentExerciseItem.exercise.target}
+                  {currentExerciseItem.exercise.equipment ? ` · ${currentExerciseItem.exercise.equipment}` : ''}
+                </p>
               </div>
-            )}
-            {/* Series Indicator Frosted Badge */}
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-white/85 backdrop-blur-md border border-white/60 shadow-sm">
-              <span className="text-[12px] font-bold text-black font-sans">
+              <span className="shrink-0 px-3 py-1 rounded-full bg-black text-white text-[12px] font-bold">
                 {exerciseDone
                   ? `${currentExerciseItem.sets.length}/${currentExerciseItem.sets.length}`
                   : `Serie ${activeSetIndex + 1} de ${currentExerciseItem.sets.length}`}
               </span>
             </div>
-            {/* Bottom Scrim Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none"></div>
-            {/* Overlay Exercise Name & Muscle Group Info */}
-            <div className="absolute bottom-3 left-4 right-4 text-white pointer-events-none">
-              <h2 className="text-[22px] tracking-tight uppercase font-extrabold text-white font-sans">
-                {currentExerciseItem.exercise.name}
-              </h2>
-              <p className="text-[13px] text-white/90 flex items-center gap-1.5 mt-0.5 font-medium">
-                <span>{currentExerciseItem.exercise.target}</span>
-              </p>
-            </div>
+
+            {currentExerciseItem.exercise.instructions.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-[13px] font-bold text-black">Cómo se hace</h3>
+                <ol className="mt-2 space-y-2">
+                  {(showAllSteps
+                    ? currentExerciseItem.exercise.instructions
+                    : currentExerciseItem.exercise.instructions.slice(0, 3)
+                  ).map((step, i) => (
+                    <li key={i} className="flex gap-2.5 text-[14px] leading-snug text-[#191c1e]">
+                      <span className="shrink-0 w-5 h-5 mt-px rounded-full bg-[#edeef0] text-[11px] font-bold flex items-center justify-center tabular-nums">
+                        {i + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+                {currentExerciseItem.exercise.instructions.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSteps((v) => !v)}
+                    aria-expanded={showAllSteps}
+                    className="mt-2 text-[13px] font-bold text-black underline underline-offset-4 cursor-pointer"
+                  >
+                    {showAllSteps ? 'Ver menos' : `Ver los ${currentExerciseItem.exercise.instructions.length} pasos`}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {coachNote && <p className="mt-3 text-[13px] text-[#45474a]">{coachNote}</p>}
           </div>
 
-          {/* 3. Recomposition Benchmark Strip */}
+          {/* 3. Last session vs today's target */}
           <div className="p-3.5 bg-[#f3f4f6]/70 grid grid-cols-2 gap-2 border-t border-[#c5c6ca]/20">
-            <div className="flex items-center gap-2.5 bg-white rounded-2xl p-2.5 shadow-sm border border-[#c5c6ca]/15">
-              <div className="w-8 h-8 rounded-full bg-[#edeef0] flex items-center justify-center text-[#45474a] shrink-0">
-                <span className="material-symbols-outlined text-[18px]">history</span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] uppercase tracking-wider text-[#45474a] font-semibold">
-                  Última sesión
-                </span>
-                <span className="text-[13px] font-bold text-[#191c1e] truncate">
-                  {currentExerciseItem.lastSessionRecord || 'Sin registro previo'}
-                </span>
-              </div>
+            <div className="flex flex-col min-w-0 bg-white rounded-2xl p-2.5 border border-[#c5c6ca]/15">
+              <span className="text-[11px] text-[#45474a] font-semibold">Última sesión</span>
+              <span className="text-[13px] font-bold text-[#191c1e]">
+                {currentExerciseItem.lastSessionRecord || 'Sin registro previo'}
+              </span>
             </div>
-
-            <div className="flex items-center gap-2.5 bg-[#274ed5]/5 rounded-2xl p-2.5 shadow-sm border border-[#274ed5]/30">
-              <div className="w-8 h-8 rounded-full bg-[#274ed5]/15 flex items-center justify-center text-[#274ed5] shrink-0">
-                <span className="material-symbols-outlined text-[18px]">target</span>
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-[10px] uppercase tracking-wider text-[#274ed5] font-bold">
-                  Objetivo hoy
-                </span>
-                <span className="text-[13px] font-bold text-black truncate">
-                  {currentExerciseItem.targetToday || currentExerciseItem.targetRir}
-                </span>
-              </div>
+            <div className="flex flex-col min-w-0 bg-[#274ed5]/5 rounded-2xl p-2.5 border border-[#274ed5]/30">
+              <span className="text-[11px] text-[#274ed5] font-bold">Objetivo hoy</span>
+              <span className="text-[13px] font-bold text-black">
+                {currentExerciseItem.targetToday || currentExerciseItem.targetRir}
+              </span>
             </div>
           </div>
         </section>
