@@ -35,22 +35,24 @@ export interface Profile {
 
 // What the onboarding form collects. weight/waist/neck/hip/body-fat don't live
 // in `profiles` — they become the user's first weigh_ins/body_measurements row.
+// Every field is optional: whatever is skipped is stored as null and the plan
+// generator falls back to its defaults (4 days, 60 min, full gym).
 export interface OnboardingInput {
-  sex: Sex;
-  age_years: number;
-  height_cm: number;
-  weight_kg: number;
-  waist_cm: number;
-  neck_cm: number;
+  sex?: Sex;
+  age_years?: number;
+  height_cm?: number;
+  weight_kg?: number;
+  waist_cm?: number;
+  neck_cm?: number;
   hip_cm?: number;
   body_fat_override_pct?: number;
-  training_experience: TrainingExperience;
-  days_per_week: number;
-  session_minutes: number;
-  equipment_access: EquipmentAccess;
-  daily_activity: DailyActivity;
-  endurance_or_high_intensity_sport: boolean;
-  weigh_in_frequency: WeighInFrequency;
-  food_logging: FoodLogging;
-  pace: Pace;
+  training_experience?: TrainingExperience;
+  days_per_week?: number;
+  session_minutes?: number;
+  equipment_access?: EquipmentAccess;
+  daily_activity?: DailyActivity;
+  endurance_or_high_intensity_sport?: boolean;
+  weigh_in_frequency?: WeighInFrequency;
+  food_logging?: FoodLogging;
+  pace?: Pace;
 }

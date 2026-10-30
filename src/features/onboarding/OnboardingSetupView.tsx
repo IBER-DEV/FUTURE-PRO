@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import {
   DailyActivity,
   EquipmentAccess,
@@ -9,13 +9,21 @@ import {
   TrainingExperience,
   WeighInFrequency
 } from '../../types/profile';
+import { FEATURES } from '../../config/features';
+import { normalizeDaysPerWeek, startCursorFor, TRAINING_WEEKDAYS, weekRotation } from '../../engine/ppl/week';
 
 interface OnboardingSetupViewProps {
   onComplete: (input: OnboardingInput) => Promise<void>;
 }
 
+// Every answer is optional. Training choices start on the plan generator's own
+// defaults (4 days, 60 min, full gym), so "Crear mi plan" works untouched.
 interface FormState {
-  sex: Sex;
+  days_per_week: number;
+  session_minutes: number;
+  equipment_access: EquipmentAccess;
+  training_experience: TrainingExperience | '';
+  sex: Sex | '';
   age_years: string;
   height_cm: string;
   weight_kg: string;
@@ -23,19 +31,19 @@ interface FormState {
   neck_cm: string;
   hip_cm: string;
   body_fat_override_pct: string;
-  training_experience: TrainingExperience;
-  days_per_week: string;
-  session_minutes: string;
-  equipment_access: EquipmentAccess;
-  daily_activity: DailyActivity;
+  daily_activity: DailyActivity | '';
   endurance_or_high_intensity_sport: boolean;
-  weigh_in_frequency: WeighInFrequency;
-  food_logging: FoodLogging;
-  pace: Pace;
+  weigh_in_frequency: WeighInFrequency | '';
+  food_logging: FoodLogging | '';
+  pace: Pace | '';
 }
 
 const initialState: FormState = {
-  sex: 'male',
+  days_per_week: 4,
+  session_minutes: 60,
+  equipment_access: 'gym',
+  training_experience: '',
+  sex: '',
   age_years: '',
   height_cm: '',
   weight_kg: '',
@@ -43,316 +51,353 @@ const initialState: FormState = {
   neck_cm: '',
   hip_cm: '',
   body_fat_override_pct: '',
-  training_experience: 'under_1_year',
-  days_per_week: '4',
-  session_minutes: '60',
-  equipment_access: 'gym',
-  daily_activity: 'lightly_active',
+  daily_activity: '',
   endurance_or_high_intensity_sport: false,
-  weigh_in_frequency: 'daily',
-  food_logging: 'calories_and_protein',
-  pace: 'moderate'
+  weigh_in_frequency: '',
+  food_logging: '',
+  pace: ''
 };
 
-const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <section className="bg-white rounded-[24px] p-4 border border-[#c5c6ca]/20 space-y-3">
-    <h2 className="text-xs font-bold uppercase tracking-wider text-[#45474a]">{title}</h2>
-    {children}
-  </section>
-);
+const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const SESSION_LABEL = { push: 'Empuje', pull: 'Tracción', legs: 'Pierna' } as const;
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <label className="block">
-    <span className="text-[11px] font-semibold text-[#45474a] block mb-1">{label}</span>
-    {children}
-  </label>
-);
+// Live preview of week 1 from the real rotation (src/engine/ppl/week.ts), not an illustration.
+function weekPreview(days: number): (string | null)[] {
+  const d = normalizeDaysPerWeek(days);
+  const steps = weekRotation(startCursorFor(0, d), d);
+  const byWeekday: (string | null)[] = Array(7).fill(null);
+  TRAINING_WEEKDAYS[d].forEach((weekday, i) => {
+    byWeekday[weekday] = `${SESSION_LABEL[steps[i].dayType]} ${steps[i].variant}`;
+  });
+  return byWeekday;
+}
 
-const inputClass =
-  'w-full h-10 px-3 bg-[#f3f4f6] rounded-xl text-sm text-black outline-none focus:ring-2 focus:ring-black';
+const toNumber = (v: string): number | undefined => {
+  const n = Number(v.replace(',', '.'));
+  return v.trim() !== '' && Number.isFinite(n) && n > 0 ? n : undefined;
+};
+
+interface ChoiceProps<T extends string | number> {
+  legend: string;
+  hint?: string;
+  value: T | '';
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+  columns?: number;
+}
+
+function Choice<T extends string | number>({ legend, hint, value, options, onChange, columns = options.length }: ChoiceProps<T>) {
+  const name = useId();
+  return (
+    <fieldset>
+      <legend className="text-[13px] font-bold text-black">{legend}</legend>
+      {hint && <p className="text-[12px] text-[#45474a] mt-0.5">{hint}</p>}
+      <div className="grid gap-2 mt-2.5" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+        {options.map((o) => {
+          const checked = value === o.value;
+          return (
+            <label
+              key={String(o.value)}
+              className={`relative min-h-11 px-2 py-2 rounded-2xl flex items-center justify-center text-center text-[13px] font-semibold leading-tight cursor-pointer transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-black ${
+                checked ? 'bg-black text-white' : 'bg-white text-black border border-[#c5c6ca]/60 hover:border-black'
+              }`}
+            >
+              <input type="radio" name={name} className="sr-only" checked={checked} onChange={() => onChange(o.value)} />
+              {o.label}
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+const NumberField: React.FC<{
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (v: string) => void;
+  min: number;
+  max: number;
+  step?: number;
+}> = ({ label, unit, value, onChange, min, max, step = 1 }) => {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-[12px] font-semibold text-[#45474a]">
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          type="number"
+          inputMode="decimal"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full h-12 pl-4 pr-12 bg-[#f3f4f6] rounded-2xl text-[15px] text-black border border-transparent outline-none transition-[background-color,border-color] duration-150 hover:bg-[#edeef0] focus:bg-white focus:border-black invalid:border-[#ba1a1a]"
+        />
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[13px] text-[#45474a] pointer-events-none">{unit}</span>
+      </div>
+    </div>
+  );
+};
+
+const selectClass =
+  'w-full h-12 px-4 bg-[#f3f4f6] rounded-2xl text-[15px] text-black border border-transparent outline-none focus:bg-white focus:border-black';
 
 export const OnboardingSetupView: React.FC<OnboardingSetupViewProps> = ({ onComplete }) => {
   const [form, setForm] = useState<FormState>(initialState);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<'save' | 'skip' | null>(null);
 
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => setForm((prev) => ({ ...prev, [key]: value }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (input: OnboardingInput, kind: 'save' | 'skip') => {
     setError(null);
-
-    const age_years = Number(form.age_years);
-    const height_cm = Number(form.height_cm);
-    const weight_kg = Number(form.weight_kg);
-    const waist_cm = Number(form.waist_cm);
-    const neck_cm = Number(form.neck_cm);
-    const days_per_week = Number(form.days_per_week);
-    const session_minutes = Number(form.session_minutes);
-
-    if (!age_years || !height_cm || !weight_kg || !waist_cm || !neck_cm) {
-      setError('Completa edad, altura, peso, cintura y cuello.');
-      return;
-    }
-    if (form.sex === 'female' && !form.hip_cm) {
-      setError('Falta la medida de cadera.');
-      return;
-    }
-
-    const input: OnboardingInput = {
-      sex: form.sex,
-      age_years,
-      height_cm,
-      weight_kg,
-      waist_cm,
-      neck_cm,
-      hip_cm: form.hip_cm ? Number(form.hip_cm) : undefined,
-      body_fat_override_pct: form.body_fat_override_pct ? Number(form.body_fat_override_pct) : undefined,
-      training_experience: form.training_experience,
-      days_per_week,
-      session_minutes,
-      equipment_access: form.equipment_access,
-      daily_activity: form.daily_activity,
-      endurance_or_high_intensity_sport: form.endurance_or_high_intensity_sport,
-      weigh_in_frequency: form.weigh_in_frequency,
-      food_logging: form.food_logging,
-      pace: form.pace
-    };
-
-    setBusy(true);
+    setBusy(kind);
     try {
       await onComplete(input);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar tu perfil.');
-    } finally {
-      setBusy(false);
+      setError(err instanceof Error ? err.message : 'No se pudo guardar tu perfil. Inténtalo de nuevo.');
+      setBusy(null);
     }
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    void submit(
+      {
+        days_per_week: form.days_per_week,
+        session_minutes: form.session_minutes,
+        equipment_access: form.equipment_access,
+        training_experience: form.training_experience || undefined,
+        sex: form.sex || undefined,
+        age_years: toNumber(form.age_years),
+        height_cm: toNumber(form.height_cm),
+        weight_kg: toNumber(form.weight_kg),
+        waist_cm: toNumber(form.waist_cm),
+        neck_cm: toNumber(form.neck_cm),
+        hip_cm: toNumber(form.hip_cm),
+        body_fat_override_pct: toNumber(form.body_fat_override_pct),
+        daily_activity: form.daily_activity || undefined,
+        endurance_or_high_intensity_sport: form.endurance_or_high_intensity_sport,
+        weigh_in_frequency: form.weigh_in_frequency || undefined,
+        food_logging: form.food_logging || undefined,
+        pace: form.pace || undefined
+      },
+      'save'
+    );
+  };
+
+  const preview = weekPreview(form.days_per_week);
+
   return (
-    <div className="w-full min-h-screen bg-[#f8f9fb] flex flex-col items-center p-4 pb-10">
-      <div className="w-full max-w-md">
-        <div className="text-center py-4">
-          <h1 className="text-[24px] font-serif-hero text-black tracking-tight">Cuéntanos de ti</h1>
-          <p className="text-xs text-[#45474a] font-medium mt-1">
-            Con esto armamos tu rutina Push/Pull/Legs semanal. Nada se hardcodea — cada quien responde lo suyo.
-          </p>
+    <div className="w-full min-h-screen bg-[#f8f9fb]">
+      <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto px-5 pt-8 pb-40" aria-busy={busy !== null}>
+        <div className="flex items-center gap-1.5">
+          <span className="font-serif-hero text-[22px] tracking-tight text-black">Future</span>
+          <span className="px-2 py-0.5 rounded-md bg-black text-white text-[11px] font-bold">PRO</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Section title="Tu perfil">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Sexo biológico">
-                <select className={inputClass} value={form.sex} onChange={(e) => set('sex', e.target.value as Sex)}>
-                  <option value="male">Hombre</option>
-                  <option value="female">Mujer</option>
-                </select>
-              </Field>
-              <Field label="Edad">
-                <input
-                  type="number"
-                  min={18}
-                  max={90}
-                  required
-                  className={inputClass}
-                  value={form.age_years}
-                  onChange={(e) => set('age_years', e.target.value)}
-                />
-              </Field>
-              <Field label="Altura (cm)">
-                <input
-                  type="number"
-                  min={130}
-                  max={230}
-                  required
-                  className={inputClass}
-                  value={form.height_cm}
-                  onChange={(e) => set('height_cm', e.target.value)}
-                />
-              </Field>
-              <Field label="Peso actual (kg)">
-                <input
-                  type="number"
-                  step="0.1"
-                  min={35}
-                  max={250}
-                  required
-                  className={inputClass}
-                  value={form.weight_kg}
-                  onChange={(e) => set('weight_kg', e.target.value)}
-                />
-              </Field>
-            </div>
-          </Section>
+        <h1 className="mt-6 font-serif-hero text-[40px] leading-[1.02] tracking-[-0.02em] text-black">Arma tu semana</h1>
+        <p className="mt-2 text-[15px] leading-relaxed text-[#45474a]">
+          Todo es opcional. Lo que no respondas usa valores por defecto y puedes cambiarlo después en tu perfil.
+        </p>
 
-          <Section title="Medidas con cinta">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Cintura (cm)">
-                <input
-                  type="number"
-                  step="0.1"
-                  required
-                  className={inputClass}
-                  value={form.waist_cm}
-                  onChange={(e) => set('waist_cm', e.target.value)}
-                />
-              </Field>
-              <Field label="Cuello (cm)">
-                <input
-                  type="number"
-                  step="0.1"
-                  required
-                  className={inputClass}
-                  value={form.neck_cm}
-                  onChange={(e) => set('neck_cm', e.target.value)}
-                />
-              </Field>
-              {form.sex === 'female' && (
-                <Field label="Cadera (cm)">
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    className={inputClass}
-                    value={form.hip_cm}
-                    onChange={(e) => set('hip_cm', e.target.value)}
-                  />
-                </Field>
-              )}
-              <Field label="% grasa medido (opcional)">
-                <input
-                  type="number"
-                  step="0.1"
-                  className={inputClass}
-                  value={form.body_fat_override_pct}
-                  onChange={(e) => set('body_fat_override_pct', e.target.value)}
-                  placeholder="DEXA, etc."
-                />
-              </Field>
-            </div>
-          </Section>
+        {/* What decides the plan */}
+        <section aria-labelledby="plan-heading" className="mt-8 flex flex-col gap-7">
+          <h2 id="plan-heading" className="sr-only">
+            Tu entrenamiento
+          </h2>
 
-          <Section title="Tu entrenamiento">
-            <Field label="¿Cuánto tiempo llevas entrenando fuerza de forma constante?">
-              <select
-                className={inputClass}
-                value={form.training_experience}
-                onChange={(e) => set('training_experience', e.target.value as TrainingExperience)}
-              >
-                <option value="none">Nunca / casi nunca</option>
-                <option value="under_1_year">Menos de 1 año</option>
-                <option value="1_to_3_years">1 a 3 años</option>
-                <option value="over_3_years">Más de 3 años</option>
-              </select>
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Días por semana">
-                <input
-                  type="number"
-                  min={3}
-                  max={6}
-                  required
-                  className={inputClass}
-                  value={form.days_per_week}
-                  onChange={(e) => set('days_per_week', e.target.value)}
-                />
-              </Field>
-              <Field label="Minutos por sesión">
-                <select
-                  className={inputClass}
-                  value={form.session_minutes}
-                  onChange={(e) => set('session_minutes', e.target.value)}
-                >
-                  <option value="30">30 min</option>
-                  <option value="45">45 min</option>
-                  <option value="60">60 min</option>
-                  <option value="90">90 min</option>
-                </select>
-              </Field>
+          <div>
+            <Choice
+              legend="¿Cuántos días por semana?"
+              value={form.days_per_week}
+              options={[3, 4, 5, 6].map((d) => ({ value: d, label: String(d) }))}
+              onChange={(v) => set('days_per_week', v)}
+            />
+            {/* A read-only preview, styled apart from the choice controls above it */}
+            <div className="mt-3 rounded-2xl bg-[#edeef0] p-3">
+            <p className="text-[12px] font-semibold text-[#45474a] mb-2">Tu primera semana</p>
+            <ol aria-label="Así quedaría tu primera semana" className="grid grid-cols-7 gap-1.5">
+              {preview.map((session, i) => (
+                <li key={DAY_LETTERS[i]} className="flex flex-col items-center gap-1.5">
+                  <span
+                    className={`w-full h-9 rounded-xl flex items-center justify-center text-[13px] font-bold transition-colors duration-200 ${
+                      session ? 'bg-white text-black shadow-[0_1px_3px_rgba(0,0,0,0.08)]' : 'text-[#45474a]'
+                    }`}
+                  >
+                    {DAY_LETTERS[i]}
+                  </span>
+                  <span className="text-[11px] leading-tight text-center font-semibold text-[#191c1e] min-h-[28px]">
+                    {session ? (
+                      <>
+                        {session.split(' ')[0]}
+                        <br />
+                        {session.split(' ')[1]}
+                      </>
+                    ) : (
+                      <span className="sr-only">Descanso</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ol>
             </div>
-            <Field label="¿Dónde entrenas?">
-              <select
-                className={inputClass}
-                value={form.equipment_access}
-                onChange={(e) => set('equipment_access', e.target.value as EquipmentAccess)}
-              >
-                <option value="gym">Gimnasio completo</option>
-                <option value="minimal">Casa con mancuernas/bandas</option>
-                <option value="none">Solo peso corporal</option>
-              </select>
-            </Field>
-            <Field label="Actividad fuera del gimnasio">
-              <select
-                className={inputClass}
-                value={form.daily_activity}
-                onChange={(e) => set('daily_activity', e.target.value as DailyActivity)}
-              >
-                <option value="sedentary">Sedentaria (oficina, poco caminar)</option>
-                <option value="lightly_active">Ligera (caminas algo a diario)</option>
-                <option value="moderately_active">Moderada (de pie gran parte del día)</option>
-                <option value="very_active">Alta (trabajo físico)</option>
-              </select>
-            </Field>
-            <label className="flex items-center gap-2 text-xs font-semibold text-[#191c1e] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.endurance_or_high_intensity_sport}
-                onChange={(e) => set('endurance_or_high_intensity_sport', e.target.checked)}
-                className="w-4 h-4"
+          </div>
+
+          <Choice
+            legend="¿Cuánto dura cada sesión?"
+            value={form.session_minutes}
+            options={[30, 45, 60, 90].map((m) => ({ value: m, label: `${m} min` }))}
+            onChange={(v) => set('session_minutes', v)}
+          />
+
+          <Choice
+            legend="¿Dónde entrenas?"
+            hint="Solo te asignamos ejercicios que puedes hacer con ese equipo."
+            value={form.equipment_access}
+            options={[
+              { value: 'gym', label: 'Gimnasio' },
+              { value: 'minimal', label: 'Mancuernas o bandas' },
+              { value: 'none', label: 'Peso corporal' }
+            ]}
+            onChange={(v) => set('equipment_access', v)}
+          />
+
+          <Choice
+            legend="¿Cuánto llevas entrenando fuerza?"
+            value={form.training_experience}
+            columns={2}
+            options={[
+              { value: 'none', label: 'Nunca o casi nunca' },
+              { value: 'under_1_year', label: 'Menos de 1 año' },
+              { value: '1_to_3_years', label: '1 a 3 años' },
+              { value: 'over_3_years', label: 'Más de 3 años' }
+            ]}
+            onChange={(v) => set('training_experience', v)}
+          />
+        </section>
+
+        {/* Optional personal data, out of the way */}
+        <details className="group mt-8 rounded-[24px] bg-white border border-[#c5c6ca]/40 open:pb-5">
+          <summary className="list-none cursor-pointer px-5 py-4 flex items-center justify-between gap-3 rounded-[24px] focus-visible:outline-2 focus-visible:outline-black">
+            <span>
+              <span className="block text-[15px] font-bold text-black">Tus datos y medidas</span>
+              <span className="block text-[12px] text-[#45474a] mt-0.5">Opcional. Sirven para seguir tu progreso corporal.</span>
+            </span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[22px] text-black transition-transform duration-200 group-open:rotate-180">
+              expand_more
+            </span>
+          </summary>
+
+          <div className="px-5 flex flex-col gap-5">
+            <Choice
+              legend="Sexo biológico"
+              hint="Solo se usa para estimar tu % de grasa."
+              value={form.sex}
+              columns={2}
+              options={[
+                { value: 'male', label: 'Hombre' },
+                { value: 'female', label: 'Mujer' }
+              ]}
+              onChange={(v) => set('sex', v)}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField label="Edad" unit="años" min={18} max={120} value={form.age_years} onChange={(v) => set('age_years', v)} />
+              <NumberField label="Altura" unit="cm" min={100} max={250} value={form.height_cm} onChange={(v) => set('height_cm', v)} />
+              <NumberField label="Peso" unit="kg" min={30} max={300} step={0.1} value={form.weight_kg} onChange={(v) => set('weight_kg', v)} />
+              <NumberField label="Cintura" unit="cm" min={40} max={200} step={0.1} value={form.waist_cm} onChange={(v) => set('waist_cm', v)} />
+              <NumberField label="Cuello" unit="cm" min={20} max={70} step={0.1} value={form.neck_cm} onChange={(v) => set('neck_cm', v)} />
+              <NumberField label="Cadera" unit="cm" min={50} max={200} step={0.1} value={form.hip_cm} onChange={(v) => set('hip_cm', v)} />
+              <NumberField
+                label="% grasa medido"
+                unit="%"
+                min={3}
+                max={60}
+                step={0.1}
+                value={form.body_fat_override_pct}
+                onChange={(v) => set('body_fat_override_pct', v)}
               />
-              Practico además un deporte de resistencia o alta intensidad
-            </label>
-          </Section>
+            </div>
+            <p className="text-[12px] text-[#45474a]">Las medidas corporales se guardan si indicas al menos la cintura.</p>
 
-          <Section title="Qué vas a registrar">
-            <Field label="¿Cada cuánto te vas a pesar?">
-              <select
-                className={inputClass}
-                value={form.weigh_in_frequency}
-                onChange={(e) => set('weigh_in_frequency', e.target.value as WeighInFrequency)}
-              >
-                <option value="daily">A diario (recomendado)</option>
-                <option value="three_per_week">3 veces por semana</option>
-                <option value="weekly">1 vez por semana</option>
-              </select>
-            </Field>
-            <Field label="¿Qué vas a registrar de tu alimentación?">
-              <select
-                className={inputClass}
-                value={form.food_logging}
-                onChange={(e) => set('food_logging', e.target.value as FoodLogging)}
-              >
-                <option value="calories_and_protein">Calorías y proteína (recomendado)</option>
-                <option value="protein_only">Solo proteína</option>
-                <option value="none">Nada por ahora</option>
-              </select>
-            </Field>
-          </Section>
+            {FEATURES.recomposition && (
+              <div className="grid gap-3">
+                <select className={selectClass} aria-label="Actividad fuera del gimnasio" value={form.daily_activity} onChange={(e) => set('daily_activity', e.target.value as FormState['daily_activity'])}>
+                  <option value="">Actividad fuera del gimnasio</option>
+                  <option value="sedentary">Sedentaria (oficina, poco caminar)</option>
+                  <option value="lightly_active">Ligera (caminas algo a diario)</option>
+                  <option value="moderately_active">Moderada (de pie gran parte del día)</option>
+                  <option value="very_active">Alta (trabajo físico)</option>
+                </select>
+                <select className={selectClass} aria-label="Frecuencia de pesaje" value={form.weigh_in_frequency} onChange={(e) => set('weigh_in_frequency', e.target.value as FormState['weigh_in_frequency'])}>
+                  <option value="">¿Cada cuánto te vas a pesar?</option>
+                  <option value="daily">A diario (recomendado)</option>
+                  <option value="three_per_week">3 veces por semana</option>
+                  <option value="weekly">1 vez por semana</option>
+                </select>
+                <select className={selectClass} aria-label="Registro de alimentación" value={form.food_logging} onChange={(e) => set('food_logging', e.target.value as FormState['food_logging'])}>
+                  <option value="">¿Qué vas a registrar de tu alimentación?</option>
+                  <option value="calories_and_protein">Calorías y proteína (recomendado)</option>
+                  <option value="protein_only">Solo proteína</option>
+                  <option value="none">Nada por ahora</option>
+                </select>
+                <select className={selectClass} aria-label="Ritmo de pérdida de peso" value={form.pace} onChange={(e) => set('pace', e.target.value as FormState['pace'])}>
+                  <option value="">¿A qué ritmo quieres perder peso?</option>
+                  <option value="conservative">Conservador (~0,5% del peso por semana)</option>
+                  <option value="moderate">Moderado (~0,75% por semana)</option>
+                  <option value="fast">Rápido (~1% por semana; hasta 1,25% si tu grasa es alta)</option>
+                </select>
+                <label className="flex items-center gap-2 text-[14px] text-[#191c1e] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-black"
+                    checked={form.endurance_or_high_intensity_sport}
+                    onChange={(e) => set('endurance_or_high_intensity_sport', e.target.checked)}
+                  />
+                  Practico además un deporte de resistencia o alta intensidad
+                </label>
+              </div>
+            )}
+          </div>
+        </details>
 
-          <Section title="Tu ritmo">
-            <Field label="¿A qué ritmo quieres perder peso?">
-              <select className={inputClass} value={form.pace} onChange={(e) => set('pace', e.target.value as Pace)}>
-                <option value="conservative">Conservador (~0,5% del peso por semana)</option>
-                <option value="moderate">Moderado (~0,75% por semana)</option>
-                <option value="fast">Rápido (~1% por semana; hasta 1,25% si tu grasa es alta)</option>
-              </select>
-            </Field>
-          </Section>
+        {error && (
+          <div role="alert" className="mt-5 flex gap-2 items-start px-4 py-3 rounded-2xl bg-[#ffdad6] text-[#93000a] text-[13px] font-semibold">
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px] shrink-0">
+              error
+            </span>
+            <span>{error}</span>
+          </div>
+        )}
 
-          {error && (
-            <div className="px-3 py-2 rounded-xl bg-[#ba1a1a]/10 text-[#ba1a1a] text-xs font-semibold">{error}</div>
-          )}
-
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full h-12 rounded-full bg-black text-white text-sm font-bold disabled:opacity-50 cursor-pointer"
-          >
-            {busy ? 'Guardando…' : 'Empezar'}
-          </button>
-        </form>
-      </div>
+        {/* Always-reachable actions */}
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-[#f8f9fb]/95 backdrop-blur-md border-t border-[#c5c6ca]/30">
+          <div className="max-w-md mx-auto px-5 pt-3 pb-5 flex flex-col gap-2">
+            <button
+              type="submit"
+              disabled={busy !== null}
+              className="h-12 rounded-full bg-black text-white text-[15px] font-bold flex items-center justify-center gap-2 hover:bg-[#1a1c1e] active:scale-[0.98] transition-[background-color,transform] duration-150 disabled:opacity-60 disabled:cursor-wait cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+            >
+              {busy === 'save' && <span aria-hidden="true" className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+              {busy === 'save' ? 'Creando tu plan…' : 'Crear mi plan'}
+            </button>
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void submit({}, 'skip')}
+              className="h-10 rounded-full text-[14px] font-semibold text-[#45474a] hover:text-black disabled:opacity-60 cursor-pointer focus-visible:outline-2 focus-visible:outline-black"
+            >
+              {busy === 'skip' ? 'Entrando…' : 'Saltar por ahora'}
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };

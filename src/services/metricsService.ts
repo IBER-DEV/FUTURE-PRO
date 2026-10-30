@@ -321,16 +321,18 @@ export async function computeProgressData(userId: string, timeframe: ProgressDat
     exerciseIndexService.getCompoundExerciseIds(),
     computeWeekDays()
   ]);
-  if (!profile || !allWeighIns.length || !allMeasurements.length) return null;
+  // Body data is optional since onboarding fields are optional: training
+  // progress (strength, adherence) must still be real, never the mock fallback.
+  if (!profile) return null;
 
   const days = TIMEFRAME_DAYS[timeframe];
   const weighIns = inTimeframe(allWeighIns, days);
   const measurements = inTimeframe(allMeasurements, days);
 
-  const latestWeight = allWeighIns[allWeighIns.length - 1].weight_kg;
-  const latestMeasurement = allMeasurements[allMeasurements.length - 1];
+  const latestWeight = allWeighIns.length ? allWeighIns[allWeighIns.length - 1].weight_kg : 0;
+  const latestMeasurement = allMeasurements.length ? allMeasurements[allMeasurements.length - 1] : undefined;
   const bodyFat = estimateLatestBodyFat(profile, latestMeasurement);
-  const ffm = bodyFat.pct != null ? estimateFatFreeMassKg(latestWeight, bodyFat.pct) : null;
+  const ffm = bodyFat.pct != null && latestWeight > 0 ? estimateFatFreeMassKg(latestWeight, bodyFat.pct) : null;
 
   const weightTrend = computeWeightTrend(allWeighIns, profile.weigh_in_frequency ?? 'daily');
   const waistTrend = computeWaistTrend(allMeasurements);
@@ -345,7 +347,7 @@ export async function computeProgressData(userId: string, timeframe: ProgressDat
     weightKg: latestWeight,
     weightDelta: weightTrend.status === 'ok' ? formatDelta(weightTrend.changeAbs ?? 0, ' kg') : 'Sin datos suficientes',
     weightTrendDirection: weightTrend.status === 'ok' ? weightTrend.direction : null,
-    waistCm: latestMeasurement.waist_cm,
+    waistCm: latestMeasurement?.waist_cm ?? 0,
     waistDelta: waistTrend.status === 'ok' ? formatDelta(waistTrend.changeAbs ?? 0, ' cm') : 'Sin datos suficientes',
     waistTrendDirection: waistTrend.status === 'ok' ? waistTrend.direction : null,
     leanMassKg: ffm != null ? Number(ffm.toFixed(1)) : 0,

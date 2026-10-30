@@ -53,28 +53,34 @@ class InsforgeProfileService implements ProfileService {
     // profile row is what App.tsx treats as "onboarding done", so it must only
     // exist once weight/measurements are safely stored.
     const date = today();
-    await upsertByDate('weigh_ins', 'measured_on', userId, date, { weight_kg: input.weight_kg });
-    await upsertByDate('body_measurements', 'measured_on', userId, date, {
-      waist_cm: input.waist_cm,
-      neck_cm: input.neck_cm,
-      hip_cm: input.hip_cm ?? null,
-      body_fat_override_pct: input.body_fat_override_pct ?? null
-    });
+    // Optional fields: only write what was given. body_measurements.waist_cm is
+    // NOT NULL, so a measurement row exists only when the waist was provided.
+    if (input.weight_kg) {
+      await upsertByDate('weigh_ins', 'measured_on', userId, date, { weight_kg: input.weight_kg });
+    }
+    if (input.waist_cm) {
+      await upsertByDate('body_measurements', 'measured_on', userId, date, {
+        waist_cm: input.waist_cm,
+        neck_cm: input.neck_cm ?? null,
+        hip_cm: input.hip_cm ?? null,
+        body_fat_override_pct: input.body_fat_override_pct ?? null
+      });
+    }
 
     const row = {
-      sex: input.sex,
-      age_years: input.age_years,
-      height_cm: input.height_cm,
-      training_experience: input.training_experience,
-      days_per_week: input.days_per_week,
-      session_minutes: input.session_minutes,
-      equipment_access: input.equipment_access,
-      daily_activity: input.daily_activity,
-      endurance_or_high_intensity_sport: input.endurance_or_high_intensity_sport,
-      weigh_in_frequency: input.weigh_in_frequency,
-      food_logging: input.food_logging,
+      sex: input.sex ?? null,
+      age_years: input.age_years ?? null,
+      height_cm: input.height_cm ?? null,
+      training_experience: input.training_experience ?? null,
+      days_per_week: input.days_per_week ?? null,
+      session_minutes: input.session_minutes ?? null,
+      equipment_access: input.equipment_access ?? null,
+      daily_activity: input.daily_activity ?? null,
+      endurance_or_high_intensity_sport: input.endurance_or_high_intensity_sport ?? false,
+      weigh_in_frequency: input.weigh_in_frequency ?? null,
+      food_logging: input.food_logging ?? null,
       goal: 'recomposition',
-      pace: input.pace,
+      pace: input.pace ?? null,
       onboarding_completed_at: new Date().toISOString()
     };
     const { data: profileRows, error: profileError } = await insforge.database
